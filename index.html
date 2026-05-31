@@ -35,8 +35,6 @@ body {
   min-height: 100vh;
   overflow-x: hidden;
 }
-
-/* Background grid */
 body::before {
   content: '';
   position: fixed;
@@ -48,10 +46,7 @@ body::before {
   pointer-events: none;
   z-index: 0;
 }
-
 .app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
-
-/* Header */
 .hdr {
   display: flex;
   align-items: flex-start;
@@ -101,8 +96,6 @@ body::before {
 .sess-post { color: var(--purple); border-color: var(--purple); background: rgba(155,109,255,0.08); }
 .sess-closed { color: var(--text3); border-color: var(--border2); background: transparent; }
 .meta-line { font-size: 10px; color: var(--text3); }
-
-/* Setup box */
 .setup {
   background: var(--bg2);
   border: 1px solid var(--border2);
@@ -154,8 +147,6 @@ body::before {
 }
 .btn-connect:hover { opacity: 0.85; }
 .key-err { font-size: 11px; color: var(--red); margin-top: 6px; }
-
-/* Controls */
 .controls {
   display: flex;
   gap: 6px;
@@ -205,12 +196,8 @@ body::before {
 }
 .btn:hover { border-color: var(--text2); color: var(--text); }
 .btn-disc { margin-left: auto; color: var(--text3); font-size: 10px; }
-
-/* Progress */
 .prog-wrap { height: 2px; background: var(--border); border-radius: 1px; margin-bottom: 12px; overflow: hidden; }
 .prog-fill { height: 2px; background: var(--green); border-radius: 1px; transition: width 0.3s; width: 0%; box-shadow: 0 0 8px var(--green); }
-
-/* Table header */
 .tbl-hdr {
   display: grid;
   grid-template-columns: 28px 72px 1fr 88px 90px 88px;
@@ -226,8 +213,6 @@ body::before {
 .tbl-hdr span:nth-child(4),
 .tbl-hdr span:nth-child(5),
 .tbl-hdr span:nth-child(6) { text-align: right; }
-
-/* Section label */
 .sec-label {
   font-size: 10px;
   color: var(--text3);
@@ -244,8 +229,6 @@ body::before {
   height: 1px;
   background: var(--border);
 }
-
-/* Row */
 .row {
   display: grid;
   grid-template-columns: 28px 72px 1fr 88px 90px 88px;
@@ -256,7 +239,6 @@ body::before {
   border-radius: 3px;
   margin-bottom: 2px;
   transition: all 0.15s;
-  position: relative;
   cursor: default;
 }
 .row:hover { background: var(--bg2); border-color: var(--border2); }
@@ -284,14 +266,10 @@ body::before {
 .daychg-cell { font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
 .up { color: var(--green); }
 .dn { color: var(--red); }
-
-/* Flash */
 @keyframes flash-up { 0%{background:rgba(0,217,126,0.12)} 100%{background:transparent} }
 @keyframes flash-dn { 0%{background:rgba(255,77,106,0.12)} 100%{background:transparent} }
 .flash-up { animation: flash-up 0.7s ease forwards; }
 .flash-dn { animation: flash-dn 0.7s ease forwards; }
-
-/* Spinner */
 .spin {
   display: inline-block;
   width: 10px; height: 10px;
@@ -303,11 +281,7 @@ body::before {
   margin-right: 6px;
 }
 @keyframes spin { to { transform: rotate(360deg); } }
-
-/* Empty / loading */
 .empty { text-align: center; padding: 3rem; font-size: 12px; color: var(--text3); }
-
-/* Ticker tape */
 .tape-wrap {
   position: fixed;
   bottom: 0; left: 0; right: 0;
@@ -338,8 +312,6 @@ body::before {
 }
 .tape-sym { color: var(--text); font-weight: 600; }
 .tape-price { color: var(--text2); }
-
-/* Responsive */
 @media (max-width: 600px) {
   .tbl-hdr, .row { grid-template-columns: 22px 60px 1fr 72px 76px; }
   .tbl-hdr span:last-child, .row > *:last-child { display: none; }
@@ -348,8 +320,6 @@ body::before {
 </head>
 <body>
 <div class="app">
-
-  <!-- Header -->
   <div class="hdr">
     <div class="hdr-left">
       <div class="logo">
@@ -364,15 +334,13 @@ body::before {
     </div>
   </div>
 
-  <!-- Setup -->
   <div class="setup" id="setupBox">
     <h2>⚡ CONNECT LIVE DATA</h2>
     <p>
       Free real-time US stock quotes via Finnhub.<br>
       1. Sign up free at <a href="https://finnhub.io/register" target="_blank">finnhub.io/register</a> — no card needed<br>
       2. Copy your API key from the dashboard<br>
-      3. Paste it below and hit connect<br><br>
-      Free tier: 60 calls/min · real-time quotes · 1-min candles · crypto 24/7
+      3. Paste it below and hit connect — it will be remembered automatically
     </p>
     <div class="key-row">
       <input class="key-inp" id="keyInp" type="password" placeholder="paste your finnhub API key..." />
@@ -381,7 +349,6 @@ body::before {
     <div class="key-err" id="keyErr"></div>
   </div>
 
-  <!-- Main board -->
   <div id="mainBoard" style="display:none">
     <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
     <div class="controls">
@@ -403,10 +370,8 @@ body::before {
     </div>
     <div id="board"><div class="empty"><span class="spin"></span>loading candle history...</div></div>
   </div>
-
 </div>
 
-<!-- Ticker tape -->
 <div class="tape-wrap" id="tapeWrap" style="display:none">
   <div class="tape" id="tape"></div>
 </div>
@@ -426,7 +391,6 @@ let sortKey = 'chg15';
 let refreshTimer = null;
 let loading = false;
 
-// ── Session ──────────────────────────────────────────────────────────
 function getSession() {
   const et = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
   const d=et.getDay(), h=et.getHours(), m=et.getMinutes(), mins=h*60+m;
@@ -444,7 +408,6 @@ function updateSession() {
   el.className = 'sess-badge ' + s.cls;
 }
 
-// ── API calls ─────────────────────────────────────────────────────────
 function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
 
 async function fetch15min(sym) {
@@ -496,14 +459,12 @@ async function fetchSym(sym) {
   };
 }
 
-// ── Load all ──────────────────────────────────────────────────────────
 async function loadAll() {
   if(loading) return;
   loading=true;
   setMeta('fetching...');
   let done=0;
   const total=watchlist.length;
-
   for(const sym of watchlist) {
     const res = await fetchSym(sym);
     if(res) {
@@ -527,7 +488,6 @@ async function loadAll() {
     document.getElementById('progFill').style.width=Math.round(done/total*100)+'%';
     if(done%5===0) { render(); updateTape(); }
   }
-
   loading=false;
   document.getElementById('progFill').style.width='0%';
   render();
@@ -535,7 +495,6 @@ async function loadAll() {
   setMeta('updated '+new Date().toLocaleTimeString()+' · auto-refresh 60s');
 }
 
-// ── Render ────────────────────────────────────────────────────────────
 function render() {
   updateSession();
   const entries = watchlist.map(s=>data[s]).filter(Boolean);
@@ -543,18 +502,15 @@ function render() {
     document.getElementById('board').innerHTML='<div class="empty"><span class="spin"></span>fetching data...</div>';
     return;
   }
-
   const sorted=[...entries].sort((a,b)=>{
     if(sortKey==='chg15') return Math.abs(b.chg15)-Math.abs(a.chg15);
     if(sortKey==='dayChg') return Math.abs(b.dayChg)-Math.abs(a.dayChg);
     if(sortKey==='price') return b.price-a.price;
     return 0;
   });
-
   const gainers=sorted.filter(e=>e.chg15>=0);
   const losers=sorted.filter(e=>e.chg15<0);
   const maxAbs=Math.max(...sorted.map(e=>Math.abs(e.chg15||0)),0.01);
-
   function row(e,i){
     const up15=e.chg15>=0, upDay=e.dayChg>=0;
     const p15=(e.chg15||0).toFixed(2);
@@ -576,7 +532,6 @@ function render() {
       <span class="daychg-cell ${upDay?'up':'dn'}">${upDay?'+':''}${pDay}%</span>
     </div>`;
   }
-
   let html='';
   if(gainers.length){
     html+=`<div class="sec-label">▲ gainers · ${gainers.length}</div>`;
@@ -589,7 +544,6 @@ function render() {
   document.getElementById('board').innerHTML=html;
 }
 
-// ── Ticker tape ───────────────────────────────────────────────────────
 function updateTape() {
   const entries=watchlist.map(s=>data[s]).filter(Boolean);
   if(!entries.length) return;
@@ -604,12 +558,10 @@ function updateTape() {
       <span class="${up?'up':'dn'}">${up?'+':''}${pct}%</span>
     </div>`;
   }).join('');
-  // Duplicate for seamless loop
   document.getElementById('tape').innerHTML=html+html;
   document.getElementById('tapeWrap').style.display='block';
 }
 
-// ── Controls ──────────────────────────────────────────────────────────
 function setSort(k,el){
   sortKey=k;
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
@@ -661,6 +613,11 @@ function connect(){
   const k=document.getElementById('keyInp').value.trim();
   if(!k){ document.getElementById('keyErr').textContent='please enter your API key'; return; }
   apiKey=k;
+  localStorage.setItem('finnhub_key', k);
+  startBoard();
+}
+
+function startBoard(){
   document.getElementById('setupBox').style.display='none';
   document.getElementById('mainBoard').style.display='block';
   const dot=document.getElementById('liveDot');
@@ -673,6 +630,7 @@ function connect(){
 
 function disconnect(){
   apiKey='';
+  localStorage.removeItem('finnhub_key');
   clearInterval(refreshTimer);
   data={};
   document.getElementById('setupBox').style.display='block';
@@ -687,9 +645,15 @@ function disconnect(){
   setMeta('not connected');
 }
 
-// Init
+// Init — auto-connect if key saved
 updateSession();
 setInterval(updateSession,30000);
+const savedKey = localStorage.getItem('finnhub_key');
+if(savedKey){
+  apiKey=savedKey;
+  document.getElementById('keyInp').value=savedKey;
+  startBoard();
+}
 </script>
 </body>
 </html>
