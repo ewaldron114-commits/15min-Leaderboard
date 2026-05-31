@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>15min Live Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #090c10;
+  --bg2: #0e1318;
+  --bg3: #141b22;
+  --border: #1e2830;
+  --border2: #243040;
+  --text: #e8edf2;
+  --text2: #7a8fa8;
+  --text3: #3d5068;
+  --green: #00d97e;
+  --green-dim: #003d22;
+  --red: #ff4d6a;
+  --red-dim: #3d0013;
+  --amber: #ffb340;
+  --blue: #3d9fff;
+  --purple: #9b6dff;
+  --font-mono: 'JetBrains Mono', monospace;
+  --font-display: 'Syne', sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* Background grid */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0,217,126,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,217,126,0.03) 1px, transparent 1px);
+  background-size: 40px 40px;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app { position: relative; z-index: 1; max-width: 960px; margin: 0 auto; padding: 1.5rem 1rem 3rem; }
+
+/* Header */
+.hdr {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+.hdr-left { display: flex; flex-direction: column; gap: 4px; }
+.logo {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--text);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.logo-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 10px var(--green);
+  flex-shrink: 0;
+}
+.logo-dot.offline { background: var(--text3); box-shadow: none; }
+.logo-dot.live { animation: glow 2s ease-in-out infinite; }
+@keyframes glow {
+  0%,100% { box-shadow: 0 0 6px var(--green); opacity: 1; }
+  50% { box-shadow: 0 0 16px var(--green), 0 0 30px var(--green); opacity: 0.7; }
+}
+.subtitle { font-size: 11px; color: var(--text3); letter-spacing: 0.1em; text-transform: uppercase; }
+.hdr-right { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.sess-badge {
+  font-size: 10px;
+  font-family: var(--font-display);
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 3px 10px;
+  border-radius: 2px;
+  border: 1px solid;
+}
+.sess-market { color: var(--green); border-color: var(--green); background: var(--green-dim); }
+.sess-pre { color: var(--amber); border-color: var(--amber); background: rgba(255,179,64,0.08); }
+.sess-post { color: var(--purple); border-color: var(--purple); background: rgba(155,109,255,0.08); }
+.sess-closed { color: var(--text3); border-color: var(--border2); background: transparent; }
+.meta-line { font-size: 10px; color: var(--text3); }
+
+/* Setup box */
+.setup {
+  background: var(--bg2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.setup h2 {
+  font-family: var(--font-display);
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--text);
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.setup p { font-size: 11px; color: var(--text2); line-height: 1.7; margin-bottom: 14px; }
+.setup a { color: var(--blue); text-decoration: none; }
+.setup a:hover { text-decoration: underline; }
+.key-row { display: flex; gap: 8px; align-items: center; }
+.key-inp {
+  flex: 1;
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 3px;
+  padding: 8px 12px;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.key-inp:focus { border-color: var(--green); }
+.key-inp::placeholder { color: var(--text3); }
+.btn-connect {
+  background: var(--green);
+  color: #000;
+  border: none;
+  border-radius: 3px;
+  padding: 8px 18px;
+  font-family: var(--font-display);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  cursor: pointer;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+}
+.btn-connect:hover { opacity: 0.85; }
+.key-err { font-size: 11px; color: var(--red); margin-top: 6px; }
+
+/* Controls */
+.controls {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+}
+.tab {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  color: var(--text3);
+  cursor: pointer;
+  letter-spacing: 0.05em;
+  transition: all 0.15s;
+}
+.tab:hover { border-color: var(--text2); color: var(--text2); }
+.tab.active { border-color: var(--green); color: var(--green); background: var(--green-dim); }
+.sym-inp {
+  background: var(--bg3);
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  padding: 5px 10px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: var(--text);
+  width: 90px;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 0.2s;
+}
+.sym-inp:focus { border-color: var(--blue); }
+.sym-inp::placeholder { color: var(--text3); }
+.btn {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  padding: 5px 12px;
+  background: transparent;
+  border: 1px solid var(--border2);
+  border-radius: 2px;
+  color: var(--text2);
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.btn:hover { border-color: var(--text2); color: var(--text); }
+.btn-disc { margin-left: auto; color: var(--text3); font-size: 10px; }
+
+/* Progress */
+.prog-wrap { height: 2px; background: var(--border); border-radius: 1px; margin-bottom: 12px; overflow: hidden; }
+.prog-fill { height: 2px; background: var(--green); border-radius: 1px; transition: width 0.3s; width: 0%; box-shadow: 0 0 8px var(--green); }
+
+/* Table header */
+.tbl-hdr {
+  display: grid;
+  grid-template-columns: 28px 72px 1fr 88px 90px 88px;
+  gap: 8px;
+  padding: 4px 12px;
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 6px;
+}
+.tbl-hdr span:nth-child(4),
+.tbl-hdr span:nth-child(5),
+.tbl-hdr span:nth-child(6) { text-align: right; }
+
+/* Section label */
+.sec-label {
+  font-size: 10px;
+  color: var(--text3);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  padding: 10px 12px 4px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.sec-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+/* Row */
+.row {
+  display: grid;
+  grid-template-columns: 28px 72px 1fr 88px 90px 88px;
+  align-items: center;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid transparent;
+  border-radius: 3px;
+  margin-bottom: 2px;
+  transition: all 0.15s;
+  position: relative;
+  cursor: default;
+}
+.row:hover { background: var(--bg2); border-color: var(--border2); }
+.rank { font-size: 11px; color: var(--text3); text-align: center; }
+.sym-cell { display: flex; align-items: center; gap: 4px; }
+.sym { font-size: 13px; font-weight: 600; color: var(--text); letter-spacing: 0.02em; }
+.del-btn {
+  font-size: 9px;
+  color: var(--text3);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 1px 3px;
+  opacity: 0;
+  transition: opacity 0.15s;
+  line-height: 1;
+}
+.row:hover .del-btn { opacity: 1; }
+.del-btn:hover { color: var(--red); }
+.name-cell .n { font-size: 11px; color: var(--text2); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.bar-wrap { height: 2px; background: var(--border); border-radius: 1px; margin-top: 3px; }
+.bar { height: 2px; border-radius: 1px; transition: width 0.5s; }
+.price-cell { font-size: 13px; color: var(--text); text-align: right; font-variant-numeric: tabular-nums; }
+.chg15-cell { font-size: 13px; font-weight: 600; text-align: right; font-variant-numeric: tabular-nums; }
+.daychg-cell { font-size: 11px; text-align: right; font-variant-numeric: tabular-nums; }
+.up { color: var(--green); }
+.dn { color: var(--red); }
+
+/* Flash */
+@keyframes flash-up { 0%{background:rgba(0,217,126,0.12)} 100%{background:transparent} }
+@keyframes flash-dn { 0%{background:rgba(255,77,106,0.12)} 100%{background:transparent} }
+.flash-up { animation: flash-up 0.7s ease forwards; }
+.flash-dn { animation: flash-dn 0.7s ease forwards; }
+
+/* Spinner */
+.spin {
+  display: inline-block;
+  width: 10px; height: 10px;
+  border: 1.5px solid var(--border2);
+  border-top-color: var(--green);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Empty / loading */
+.empty { text-align: center; padding: 3rem; font-size: 12px; color: var(--text3); }
+
+/* Ticker tape */
+.tape-wrap {
+  position: fixed;
+  bottom: 0; left: 0; right: 0;
+  height: 28px;
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  overflow: hidden;
+  z-index: 10;
+}
+.tape {
+  display: flex;
+  align-items: center;
+  height: 100%;
+  white-space: nowrap;
+  animation: scroll-tape 60s linear infinite;
+}
+.tape:hover { animation-play-state: paused; }
+@keyframes scroll-tape { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+.tape-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 0 20px;
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  border-right: 1px solid var(--border);
+  height: 100%;
+}
+.tape-sym { color: var(--text); font-weight: 600; }
+.tape-price { color: var(--text2); }
+
+/* Responsive */
+@media (max-width: 600px) {
+  .tbl-hdr, .row { grid-template-columns: 22px 60px 1fr 72px 76px; }
+  .tbl-hdr span:last-child, .row > *:last-child { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Header -->
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="logo">
+        <span class="logo-dot offline" id="liveDot"></span>
+        15MIN SCANNER
+      </div>
+      <div class="subtitle">real-time market mover leaderboard</div>
+    </div>
+    <div class="hdr-right">
+      <span class="sess-badge sess-closed" id="sessBadge">OFFLINE</span>
+      <span class="meta-line" id="metaLine">not connected</span>
+    </div>
+  </div>
+
+  <!-- Setup -->
+  <div class="setup" id="setupBox">
+    <h2>⚡ CONNECT LIVE DATA</h2>
+    <p>
+      Free real-time US stock quotes via Finnhub.<br>
+      1. Sign up free at <a href="https://finnhub.io/register" target="_blank">finnhub.io/register</a> — no card needed<br>
+      2. Copy your API key from the dashboard<br>
+      3. Paste it below and hit connect<br><br>
+      Free tier: 60 calls/min · real-time quotes · 1-min candles · crypto 24/7
+    </p>
+    <div class="key-row">
+      <input class="key-inp" id="keyInp" type="password" placeholder="paste your finnhub API key..." />
+      <button class="btn-connect" onclick="connect()">CONNECT</button>
+    </div>
+    <div class="key-err" id="keyErr"></div>
+  </div>
+
+  <!-- Main board -->
+  <div id="mainBoard" style="display:none">
+    <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+    <div class="controls">
+      <button class="tab active" onclick="setSort('chg15',this)">▲▼ 15M MOVE</button>
+      <button class="tab" onclick="setSort('dayChg',this)">📅 DAY CHG</button>
+      <button class="tab" onclick="setSort('price',this)">$ PRICE</button>
+      <input class="sym-inp" id="symInp" placeholder="+ ticker" maxlength="8" />
+      <button class="btn" onclick="addSym()">ADD</button>
+      <button class="btn" id="refBtn" onclick="hardRefresh()">↻ REFRESH</button>
+      <button class="btn btn-disc" onclick="disconnect()">disconnect</button>
+    </div>
+    <div class="tbl-hdr">
+      <span>#</span>
+      <span>ticker</span>
+      <span>name</span>
+      <span>price</span>
+      <span>15m chg</span>
+      <span>day chg</span>
+    </div>
+    <div id="board"><div class="empty"><span class="spin"></span>loading candle history...</div></div>
+  </div>
+
+</div>
+
+<!-- Ticker tape -->
+<div class="tape-wrap" id="tapeWrap" style="display:none">
+  <div class="tape" id="tape"></div>
+</div>
+
+<script>
+const UNIVERSE = [
+  'SPY','QQQ','AAPL','TSLA','NVDA','AMD','META','MSFT','AMZN','GOOGL',
+  'NFLX','SOFI','PLTR','RIVN','COIN','HOOD','ARM','SMCI','MU','INTC',
+  'BAC','JPM','GS','XOM','CVNA','UBER','LYFT','SNAP','RBLX','MARA',
+  'RIOT','IONQ','SOUN','MSTR','GME','AMC','BBAI','AI','OPEN','WOLF'
+];
+
+let apiKey = '';
+let watchlist = [...UNIVERSE];
+let data = {};
+let sortKey = 'chg15';
+let refreshTimer = null;
+let loading = false;
+
+// ── Session ──────────────────────────────────────────────────────────
+function getSession() {
+  const et = new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const d=et.getDay(), h=et.getHours(), m=et.getMinutes(), mins=h*60+m;
+  if(d===0||d===6) return {label:'WEEKEND',cls:'sess-closed'};
+  if(mins>=240&&mins<570) return {label:'PREMARKET',cls:'sess-pre'};
+  if(mins>=570&&mins<960) return {label:'MARKET OPEN',cls:'sess-market'};
+  if(mins>=960&&mins<1200) return {label:'POSTMARKET',cls:'sess-post'};
+  return {label:'CLOSED',cls:'sess-closed'};
+}
+
+function updateSession() {
+  const s = getSession();
+  const el = document.getElementById('sessBadge');
+  el.textContent = s.label;
+  el.className = 'sess-badge ' + s.cls;
+}
+
+// ── API calls ─────────────────────────────────────────────────────────
+function delay(ms){ return new Promise(r=>setTimeout(r,ms)); }
+
+async function fetch15min(sym) {
+  const now = Math.floor(Date.now()/1000);
+  const from = now - 1200;
+  try {
+    const r = await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(sym)}&resolution=1&from=${from}&to=${now}&token=${apiKey}`);
+    if(!r.ok) return null;
+    const d = await r.json();
+    if(!d||d.s==='no_data'||!d.c||d.c.length<2) return null;
+    const closes=d.c, times=d.t;
+    const cur = closes[closes.length-1];
+    const target = now-900;
+    let p15 = closes[0];
+    for(let i=0;i<times.length;i++) if(times[i]<=target) p15=closes[i];
+    return { price:cur, chg15:((cur-p15)/p15)*100 };
+  } catch(e){ return null; }
+}
+
+async function fetchQuote(sym) {
+  try {
+    const r = await fetch(`https://finnhub.io/api/v1/quote?symbol=${encodeURIComponent(sym)}&token=${apiKey}`);
+    if(!r.ok) return null;
+    const d = await r.json();
+    if(!d.c||d.c===0) return null;
+    return { price:d.c, dayChg:d.pc?((d.c-d.pc)/d.pc)*100:0, prevClose:d.pc };
+  } catch(e){ return null; }
+}
+
+async function fetchName(sym) {
+  try {
+    const r = await fetch(`https://finnhub.io/api/v1/stock/profile2?symbol=${encodeURIComponent(sym)}&token=${apiKey}`);
+    if(!r.ok) return sym;
+    const d = await r.json();
+    return d.name ? d.name.substring(0,20) : sym;
+  } catch(e){ return sym; }
+}
+
+async function fetchSym(sym) {
+  const [candle, quote] = await Promise.all([fetch15min(sym), fetchQuote(sym)]);
+  await delay(100);
+  if(!candle&&!quote) return null;
+  return {
+    symbol: sym,
+    price: candle?.price||quote?.price||0,
+    chg15: candle?.chg15??0,
+    dayChg: quote?.dayChg??0,
+    name: data[sym]?.name||sym
+  };
+}
+
+// ── Load all ──────────────────────────────────────────────────────────
+async function loadAll() {
+  if(loading) return;
+  loading=true;
+  setMeta('fetching...');
+  let done=0;
+  const total=watchlist.length;
+
+  for(const sym of watchlist) {
+    const res = await fetchSym(sym);
+    if(res) {
+      const prev=data[sym];
+      if(prev) {
+        const row=document.getElementById('row-'+sym);
+        if(row){
+          row.classList.remove('flash-up','flash-dn');
+          void row.offsetWidth;
+          if(res.chg15>prev.chg15) row.classList.add('flash-up');
+          else if(res.chg15<prev.chg15) row.classList.add('flash-dn');
+          setTimeout(()=>row&&row.classList.remove('flash-up','flash-dn'),800);
+        }
+      }
+      if(!data[sym]||data[sym].name===sym) {
+        fetchName(sym).then(n=>{ if(data[sym]) { data[sym].name=n; render(); updateTape(); } });
+      }
+      data[sym]=res;
+    }
+    done++;
+    document.getElementById('progFill').style.width=Math.round(done/total*100)+'%';
+    if(done%5===0) { render(); updateTape(); }
+  }
+
+  loading=false;
+  document.getElementById('progFill').style.width='0%';
+  render();
+  updateTape();
+  setMeta('updated '+new Date().toLocaleTimeString()+' · auto-refresh 60s');
+}
+
+// ── Render ────────────────────────────────────────────────────────────
+function render() {
+  updateSession();
+  const entries = watchlist.map(s=>data[s]).filter(Boolean);
+  if(!entries.length) {
+    document.getElementById('board').innerHTML='<div class="empty"><span class="spin"></span>fetching data...</div>';
+    return;
+  }
+
+  const sorted=[...entries].sort((a,b)=>{
+    if(sortKey==='chg15') return Math.abs(b.chg15)-Math.abs(a.chg15);
+    if(sortKey==='dayChg') return Math.abs(b.dayChg)-Math.abs(a.dayChg);
+    if(sortKey==='price') return b.price-a.price;
+    return 0;
+  });
+
+  const gainers=sorted.filter(e=>e.chg15>=0);
+  const losers=sorted.filter(e=>e.chg15<0);
+  const maxAbs=Math.max(...sorted.map(e=>Math.abs(e.chg15||0)),0.01);
+
+  function row(e,i){
+    const up15=e.chg15>=0, upDay=e.dayChg>=0;
+    const p15=(e.chg15||0).toFixed(2);
+    const pDay=(e.dayChg||0).toFixed(2);
+    const bw=Math.round(Math.abs(e.chg15)/maxAbs*100);
+    const bc=up15?'var(--green)':'var(--red)';
+    return `<div class="row" id="row-${e.symbol}">
+      <span class="rank">${i+1}</span>
+      <div class="sym-cell">
+        <span class="sym">${e.symbol}</span>
+        <button class="del-btn" onclick="removeSym('${e.symbol}')" title="remove">✕</button>
+      </div>
+      <div class="name-cell">
+        <div class="n">${e.name||''}</div>
+        <div class="bar-wrap"><div class="bar" style="width:${bw}%;background:${bc}"></div></div>
+      </div>
+      <span class="price-cell">$${(e.price||0).toFixed(2)}</span>
+      <span class="chg15-cell ${up15?'up':'dn'}">${up15?'+':''}${p15}%</span>
+      <span class="daychg-cell ${upDay?'up':'dn'}">${upDay?'+':''}${pDay}%</span>
+    </div>`;
+  }
+
+  let html='';
+  if(gainers.length){
+    html+=`<div class="sec-label">▲ gainers · ${gainers.length}</div>`;
+    html+=gainers.map((e,i)=>row(e,i+1)).join('');
+  }
+  if(losers.length){
+    html+=`<div class="sec-label" style="margin-top:8px">▼ losers · ${losers.length}</div>`;
+    html+=losers.map((e,i)=>row(e,i+1)).join('');
+  }
+  document.getElementById('board').innerHTML=html;
+}
+
+// ── Ticker tape ───────────────────────────────────────────────────────
+function updateTape() {
+  const entries=watchlist.map(s=>data[s]).filter(Boolean);
+  if(!entries.length) return;
+  const sorted=[...entries].sort((a,b)=>Math.abs(b.chg15)-Math.abs(a.chg15));
+  const items=sorted.slice(0,20);
+  const html=items.map(e=>{
+    const up=e.chg15>=0;
+    const pct=(e.chg15||0).toFixed(2);
+    return `<div class="tape-item">
+      <span class="tape-sym">${e.symbol}</span>
+      <span class="tape-price">$${(e.price||0).toFixed(2)}</span>
+      <span class="${up?'up':'dn'}">${up?'+':''}${pct}%</span>
+    </div>`;
+  }).join('');
+  // Duplicate for seamless loop
+  document.getElementById('tape').innerHTML=html+html;
+  document.getElementById('tapeWrap').style.display='block';
+}
+
+// ── Controls ──────────────────────────────────────────────────────────
+function setSort(k,el){
+  sortKey=k;
+  document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  render();
+}
+
+function removeSym(sym){
+  watchlist=watchlist.filter(s=>s!==sym);
+  delete data[sym];
+  render();
+  updateTape();
+}
+
+async function addSym(){
+  const inp=document.getElementById('symInp');
+  const sym=inp.value.trim().toUpperCase();
+  inp.value='';
+  if(!sym||watchlist.includes(sym)) return;
+  watchlist.unshift(sym);
+  render();
+  const res=await fetchSym(sym);
+  if(res){
+    const name=await fetchName(sym);
+    data[sym]={...res,name};
+    render();
+    updateTape();
+  } else {
+    watchlist=watchlist.filter(s=>s!==sym);
+    render();
+  }
+}
+
+document.addEventListener('keydown',e=>{
+  if(e.target.id==='symInp'&&e.key==='Enter') addSym();
+});
+
+async function hardRefresh(){
+  clearInterval(refreshTimer);
+  document.getElementById('refBtn').innerHTML='<span class="spin"></span>LOADING';
+  await loadAll();
+  document.getElementById('refBtn').innerHTML='↻ REFRESH';
+  refreshTimer=setInterval(loadAll,60000);
+}
+
+function setMeta(t){ document.getElementById('metaLine').textContent=t; }
+
+function connect(){
+  const k=document.getElementById('keyInp').value.trim();
+  if(!k){ document.getElementById('keyErr').textContent='please enter your API key'; return; }
+  apiKey=k;
+  document.getElementById('setupBox').style.display='none';
+  document.getElementById('mainBoard').style.display='block';
+  const dot=document.getElementById('liveDot');
+  dot.classList.remove('offline');
+  dot.classList.add('live');
+  updateSession();
+  loadAll();
+  refreshTimer=setInterval(loadAll,60000);
+}
+
+function disconnect(){
+  apiKey='';
+  clearInterval(refreshTimer);
+  data={};
+  document.getElementById('setupBox').style.display='block';
+  document.getElementById('mainBoard').style.display='none';
+  document.getElementById('tapeWrap').style.display='none';
+  document.getElementById('keyInp').value='';
+  const dot=document.getElementById('liveDot');
+  dot.classList.remove('live');
+  dot.classList.add('offline');
+  document.getElementById('sessBadge').textContent='OFFLINE';
+  document.getElementById('sessBadge').className='sess-badge sess-closed';
+  setMeta('not connected');
+}
+
+// Init
+updateSession();
+setInterval(updateSession,30000);
+</script>
+</body>
+</html>
