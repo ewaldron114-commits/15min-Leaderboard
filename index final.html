@@ -1,0 +1,368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>15min Live Scanner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#090c10;--bg2:#0e1318;--bg3:#141b22;--border:#1e2830;--border2:#243040;--text:#e8edf2;--text2:#7a8fa8;--text3:#3d5068;--green:#00d97e;--green-dim:#003d22;--red:#ff4d6a;--red-dim:#3d0013;--amber:#ffb340;--blue:#3d9fff;--purple:#9b6dff;--font-mono:'JetBrains Mono',monospace;--font-display:'Syne',sans-serif;}
+*{box-sizing:border-box;margin:0;padding:0}html,body{height:100%}
+body{background:var(--bg);color:var(--text);font-family:var(--font-mono);min-height:100vh;overflow-x:hidden}
+body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(0,217,126,0.03) 1px,transparent 1px),linear-gradient(90deg,rgba(0,217,126,0.03) 1px,transparent 1px);background-size:40px 40px;pointer-events:none;z-index:0}
+.app{position:relative;z-index:1;max-width:1020px;margin:0 auto;padding:1.5rem 1rem 3rem}
+.hdr{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:12px}
+.hdr-left{display:flex;flex-direction:column;gap:4px}
+.logo{font-family:var(--font-display);font-size:22px;font-weight:800;letter-spacing:-0.03em;color:var(--text);display:flex;align-items:center;gap:10px}
+.logo-dot{width:8px;height:8px;border-radius:50%;background:var(--text3);flex-shrink:0}
+.logo-dot.live{background:var(--green);box-shadow:0 0 10px var(--green);animation:glow 2s ease-in-out infinite}
+@keyframes glow{0%,100%{box-shadow:0 0 6px var(--green);opacity:1}50%{box-shadow:0 0 16px var(--green),0 0 30px var(--green);opacity:0.7}}
+.subtitle{font-size:11px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase}
+.hdr-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.sess-badge{font-size:10px;font-family:var(--font-display);font-weight:600;letter-spacing:0.12em;text-transform:uppercase;padding:3px 10px;border-radius:2px;border:1px solid}
+.sess-market{color:var(--green);border-color:var(--green);background:var(--green-dim)}
+.sess-pre{color:var(--amber);border-color:var(--amber);background:rgba(255,179,64,0.08)}
+.sess-post{color:var(--purple);border-color:var(--purple);background:rgba(155,109,255,0.08)}
+.sess-closed{color:var(--text3);border-color:var(--border2);background:transparent}
+.meta-line{font-size:10px;color:var(--text3)}
+.setup{background:var(--bg2);border:1px solid var(--border2);border-radius:4px;padding:1.5rem;margin-bottom:1.25rem}
+.setup h2{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:10px}
+.setup p{font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:16px}
+.setup a{color:var(--blue);text-decoration:none}.setup a:hover{text-decoration:underline}
+.key-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
+.key-inp{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:8px 12px;font-family:var(--font-mono);font-size:12px;color:var(--text);outline:none;transition:border-color 0.2s}
+.key-inp:focus{border-color:var(--green)}.key-inp::placeholder{color:var(--text3)}
+.btn-connect{background:var(--green);color:#000;border:none;border-radius:3px;padding:9px 18px;font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:0.05em;cursor:pointer;transition:opacity 0.15s;width:100%}
+.btn-connect:hover{opacity:0.85}
+.key-err{font-size:11px;color:var(--red);margin-top:6px}
+.controls{display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.tab{font-family:var(--font-mono);font-size:11px;padding:5px 12px;background:transparent;border:1px solid var(--border2);border-radius:2px;color:var(--text3);cursor:pointer;letter-spacing:0.05em;transition:all 0.15s}
+.tab:hover{border-color:var(--text2);color:var(--text2)}
+.tab.active{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.tab.active-red{border-color:var(--red);color:var(--red);background:var(--red-dim)}
+.tab.active-blue{border-color:var(--blue);color:var(--blue);background:rgba(61,159,255,0.08)}
+.sym-inp{background:var(--bg3);border:1px solid var(--border2);border-radius:2px;padding:5px 10px;font-family:var(--font-mono);font-size:11px;color:var(--text);width:90px;text-transform:uppercase;outline:none;transition:border-color 0.2s}
+.sym-inp:focus{border-color:var(--blue)}.sym-inp::placeholder{color:var(--text3)}
+.btn{font-family:var(--font-mono);font-size:11px;padding:5px 12px;background:transparent;border:1px solid var(--border2);border-radius:2px;color:var(--text2);cursor:pointer;transition:all 0.15s}
+.btn:hover{border-color:var(--text2);color:var(--text)}
+.btn-disc{margin-left:auto;color:var(--text3);font-size:10px}
+.divider{width:1px;height:18px;background:var(--border2);margin:0 2px}
+.prog-wrap{height:2px;background:var(--border);border-radius:1px;margin-bottom:12px;overflow:hidden}
+.prog-fill{height:2px;background:var(--green);border-radius:1px;transition:width 0.3s;width:0%;box-shadow:0 0 8px var(--green)}
+.status-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
+.status-chip{font-size:10px;padding:3px 8px;border-radius:2px;border:1px solid var(--border2);color:var(--text3);letter-spacing:0.05em}
+.status-chip.ok{border-color:var(--green);color:var(--green);background:var(--green-dim)}
+.tbl-hdr{display:grid;grid-template-columns:28px 72px 1fr 80px 100px 88px 80px;gap:8px;padding:4px 12px;font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:6px}
+.tbl-hdr span:nth-child(n+4){text-align:right}
+.sec-label{font-size:10px;color:var(--text3);letter-spacing:0.12em;text-transform:uppercase;padding:10px 12px 4px;display:flex;align-items:center;gap:8px}
+.sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
+.row{display:grid;grid-template-columns:28px 72px 1fr 80px 100px 88px 80px;align-items:center;gap:8px;padding:9px 12px;border:1px solid transparent;border-radius:3px;margin-bottom:2px;transition:all 0.15s;cursor:default}
+.row:hover{background:var(--bg2);border-color:var(--border2)}
+.rank{font-size:11px;color:var(--text3);text-align:center}
+.sym-cell{display:flex;align-items:center;gap:4px}
+.sym{font-size:13px;font-weight:600;color:var(--text);letter-spacing:0.02em}
+.pin-badge{font-size:8px;padding:1px 4px;border-radius:2px;background:var(--amber);color:#000;font-weight:700}
+.del-btn{font-size:9px;color:var(--text3);background:none;border:none;cursor:pointer;padding:1px 3px;opacity:0;transition:opacity 0.15s;line-height:1}
+.row:hover .del-btn{opacity:1}.del-btn:hover{color:var(--red)}
+.name-cell .n{font-size:11px;color:var(--text2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.bar-wrap{height:2px;background:var(--border);border-radius:1px;margin-top:3px}
+.bar{height:2px;border-radius:1px;transition:width 0.5s}
+.price-cell{font-size:13px;color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
+.daychg-cell{font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.chg-cell{font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
+.vol-cell{font-size:11px;color:var(--text2);text-align:right}
+.up{color:var(--green)}.dn{color:var(--red)}
+@keyframes flash-up{0%{background:rgba(0,217,126,0.15)}100%{background:transparent}}
+@keyframes flash-dn{0%{background:rgba(255,77,106,0.15)}100%{background:transparent}}
+.flash-up{animation:flash-up 0.7s ease forwards}
+.flash-dn{animation:flash-dn 0.7s ease forwards}
+.spin{display:inline-block;width:10px;height:10px;border:1.5px solid var(--border2);border-top-color:var(--green);border-radius:50%;animation:spin 0.7s linear infinite;vertical-align:middle;margin-right:6px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.empty{text-align:center;padding:3rem;font-size:12px;color:var(--text3)}
+.tape-wrap{position:fixed;bottom:0;left:0;right:0;height:28px;background:var(--bg2);border-top:1px solid var(--border);overflow:hidden;z-index:10}
+.tape{display:flex;align-items:center;height:100%;white-space:nowrap;animation:scroll-tape 80s linear infinite}
+.tape:hover{animation-play-state:paused}
+@keyframes scroll-tape{0%{transform:translateX(0)}100%{transform:translateX(-50%)}}
+.tape-item{display:inline-flex;align-items:center;gap:6px;padding:0 20px;font-size:10px;letter-spacing:0.05em;border-right:1px solid var(--border);height:100%}
+.tape-sym{color:var(--text);font-weight:600}.tape-price{color:var(--text2)}
+@media(max-width:640px){.tbl-hdr,.row{grid-template-columns:22px 60px 1fr 70px 80px}.tbl-hdr span:nth-child(n+6),.row>*:nth-child(n+6){display:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <div class="hdr">
+    <div class="hdr-left">
+      <div class="logo"><span class="logo-dot" id="liveDot"></span>MOVER SCANNER</div>
+      <div class="subtitle">real-time top gainers · losers · most active · powered by fmp</div>
+    </div>
+    <div class="hdr-right">
+      <span class="sess-badge sess-closed" id="sessBadge">OFFLINE</span>
+      <span class="meta-line" id="metaLine">not connected</span>
+    </div>
+  </div>
+
+  <div class="setup" id="setupBox">
+    <h2>CONNECT LIVE DATA</h2>
+    <p>
+      One free API key — saved permanently in your browser. No daily login needed.<br><br>
+      <strong>FMP (Financial Modeling Prep)</strong> — pulls top gainers / losers / most active across ALL US stocks including small caps and OTC movers. Loads instantly. Free at <a href="https://financialmodelingprep.com/register" target="_blank">financialmodelingprep.com</a> — sign up, go to Dashboard, copy your API key.
+    </p>
+    <div class="key-row">
+      <input class="key-inp" id="fmpKey" type="password" placeholder="paste your FMP API key here..."/>
+      <button class="btn-connect" style="width:auto" onclick="connect()">CONNECT</button>
+    </div>
+    <button class="btn-connect" onclick="connect()">CONNECT — KEY AUTO-SAVED IN BROWSER</button>
+    <div class="key-err" id="keyErr"></div>
+  </div>
+
+  <div id="mainBoard" style="display:none">
+    <div class="prog-wrap"><div class="prog-fill" id="progFill"></div></div>
+    <div class="controls">
+      <button class="tab active" id="tabG" onclick="setMode('gainers',this)">GAINERS</button>
+      <button class="tab" id="tabL" onclick="setMode('losers',this)">LOSERS</button>
+      <button class="tab" id="tabA" onclick="setMode('actives',this)">MOST ACTIVE</button>
+      <div class="divider"></div>
+      <button class="tab active" id="srtDay" onclick="setSort('dayChg',this)">DAY%</button>
+      <button class="tab" id="srtChg" onclick="setSort('chg',this)">CHG $</button>
+      <button class="tab" id="srtVol" onclick="setSort('vol',this)">VOLUME</button>
+      <button class="tab" id="srtPrice" onclick="setSort('price',this)">PRICE</button>
+      <div class="divider"></div>
+      <input class="sym-inp" id="symInp" placeholder="+ ticker" maxlength="8"/>
+      <button class="btn" onclick="addSym()">ADD</button>
+      <button class="btn" id="refBtn" onclick="hardRefresh()">REFRESH</button>
+      <button class="btn btn-disc" onclick="disconnect()">disconnect</button>
+    </div>
+    <div class="status-bar" id="statusBar"></div>
+    <div class="tbl-hdr">
+      <span>#</span><span>ticker</span><span>name</span>
+      <span>price</span><span>day chg %</span><span>chg $</span><span>volume</span>
+    </div>
+    <div id="board"><div class="empty"><span class="spin"></span>loading...</div></div>
+  </div>
+</div>
+
+<div class="tape-wrap" id="tapeWrap" style="display:none">
+  <div class="tape" id="tape"></div>
+</div>
+
+<script>
+let FMP_KEY='';
+let mode='gainers',sortKey='dayChg';
+let data={},pinnedSyms=[],universeSyms=[];
+let refreshTimer=null;
+
+function getSession(){
+  const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
+  const d=et.getDay(),h=et.getHours(),m=et.getMinutes(),mins=h*60+m;
+  if(d===0||d===6) return {label:'WEEKEND',cls:'sess-closed'};
+  if(mins>=240&&mins<570) return {label:'PREMARKET',cls:'sess-pre'};
+  if(mins>=570&&mins<960) return {label:'MARKET OPEN',cls:'sess-market'};
+  if(mins>=960&&mins<1200) return {label:'POSTMARKET',cls:'sess-post'};
+  return {label:'CLOSED',cls:'sess-closed'};
+}
+function updateSession(){const s=getSession();const el=document.getElementById('sessBadge');el.textContent=s.label;el.className='sess-badge '+s.cls;}
+
+async function loadAll(){
+  setMeta('fetching...');
+  document.getElementById('progFill').style.width='30%';
+  const urls={
+    gainers:`https://financialmodelingprep.com/api/v3/gainers?apikey=${FMP_KEY}`,
+    losers:`https://financialmodelingprep.com/api/v3/losers?apikey=${FMP_KEY}`,
+    actives:`https://financialmodelingprep.com/api/v3/actives?apikey=${FMP_KEY}`
+  };
+  try{
+    const r=await fetch(urls[mode]);
+    if(!r.ok) throw new Error('API error '+r.status);
+    const list=await r.json();
+    if(!Array.isArray(list)) throw new Error('unexpected response — check your FMP key');
+
+    universeSyms=[];
+    // Keep pinned data, reset universe data
+    for(const sym of Object.keys(data)){
+      if(!pinnedSyms.includes(sym)) delete data[sym];
+    }
+
+    for(const item of list.slice(0,50)){
+      const sym=item.ticker||item.symbol;
+      if(!sym) continue;
+      universeSyms.push(sym);
+      const prev=data[sym];
+      const newDayChg=parseFloat(item.changesPercentage||item.changePercentage||0);
+      data[sym]={
+        symbol:sym,
+        name:(item.companyName||item.name||sym).substring(0,24),
+        price:parseFloat(item.price||item.lastSalePrice||0),
+        dayChg:newDayChg,
+        chg:parseFloat(item.change||0),
+        vol:parseInt(item.volume||0),
+      };
+      // Flash on update
+      if(prev&&document.getElementById('row-'+sym)){
+        const row=document.getElementById('row-'+sym);
+        row.classList.remove('flash-up','flash-dn');
+        void row.offsetWidth;
+        if(newDayChg>prev.dayChg) row.classList.add('flash-up');
+        else if(newDayChg<prev.dayChg) row.classList.add('flash-dn');
+        setTimeout(()=>row&&row.classList.remove('flash-up','flash-dn'),800);
+      }
+    }
+
+    // Also fetch pinned symbols via quote endpoint
+    for(const sym of pinnedSyms){
+      if(data[sym]&&data[sym].price>0) continue; // already have it
+      try{
+        const qr=await fetch(`https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`);
+        const qd=await qr.json();
+        if(Array.isArray(qd)&&qd[0]){
+          const q=qd[0];
+          data[sym]={symbol:sym,name:(q.name||sym).substring(0,24),price:q.price||0,dayChg:q.changesPercentage||0,chg:q.change||0,vol:q.volume||0};
+        }
+      }catch(e){}
+    }
+
+    document.getElementById('progFill').style.width='100%';
+    setTimeout(()=>document.getElementById('progFill').style.width='0%',400);
+    render();updateTape();
+    document.getElementById('statusBar').innerHTML=`<span class="status-chip ok">FMP live · ${universeSyms.length} stocks</span><span class="status-chip">mode: ${mode.toUpperCase()}</span><span class="status-chip">next refresh: 30s</span>`;
+    setMeta('updated '+new Date().toLocaleTimeString()+' · auto-refresh 30s');
+  }catch(e){
+    document.getElementById('progFill').style.width='0%';
+    document.getElementById('statusBar').innerHTML=`<span class="status-chip" style="border-color:var(--red);color:var(--red)">error: ${e.message}</span>`;
+    setMeta('error — check your FMP key');
+  }
+}
+
+function fmtVol(v){if(!v) return '—';if(v>=1e9) return (v/1e9).toFixed(1)+'B';if(v>=1e6) return (v/1e6).toFixed(1)+'M';if(v>=1e3) return (v/1e3).toFixed(0)+'K';return v;}
+
+function render(){
+  updateSession();
+  const allSyms=[...new Set([...pinnedSyms,...universeSyms])];
+  const entries=allSyms.map(s=>data[s]).filter(e=>e&&e.price>0);
+  if(!entries.length){document.getElementById('board').innerHTML='<div class="empty"><span class="spin"></span>fetching data...</div>';return;}
+  const sorted=[...entries].sort((a,b)=>{
+    if(sortKey==='dayChg') return Math.abs(b.dayChg||0)-Math.abs(a.dayChg||0);
+    if(sortKey==='chg') return Math.abs(b.chg||0)-Math.abs(a.chg||0);
+    if(sortKey==='vol') return (b.vol||0)-(a.vol||0);
+    if(sortKey==='price') return b.price-a.price;
+    return 0;
+  });
+  const gainers=sorted.filter(e=>(e.dayChg||0)>=0);
+  const losers=sorted.filter(e=>(e.dayChg||0)<0);
+  const maxAbs=Math.max(...sorted.map(e=>Math.abs(e.dayChg||0)),0.01);
+  function mkRow(e,i){
+    const up=(e.dayChg||0)>=0;
+    const pct=(e.dayChg||0).toFixed(2);
+    const chgDollar=(e.chg||0).toFixed(2);
+    const bw=Math.round(Math.abs(e.dayChg||0)/maxAbs*100);
+    const bc=up?'var(--green)':'var(--red)';
+    const pinned=pinnedSyms.includes(e.symbol);
+    return `<div class="row" id="row-${e.symbol}">
+      <span class="rank">${i+1}</span>
+      <div class="sym-cell"><span class="sym">${e.symbol}</span>${pinned?'<span class="pin-badge">PIN</span>':''}<button class="del-btn" onclick="removeSym('${e.symbol}')">x</button></div>
+      <div class="name-cell"><div class="n">${e.name||''}</div><div class="bar-wrap"><div class="bar" style="width:${bw}%;background:${bc}"></div></div></div>
+      <span class="price-cell">$${(e.price||0).toFixed(2)}</span>
+      <span class="daychg-cell ${up?'up':'dn'}">${up?'+':''}${pct}%</span>
+      <span class="chg-cell ${up?'up':'dn'}">${up?'+':''}$${chgDollar}</span>
+      <span class="vol-cell">${fmtVol(e.vol)}</span>
+    </div>`;
+  }
+  let html='';
+  if(gainers.length){html+=`<div class="sec-label">gainers · ${gainers.length}</div>`;html+=gainers.map((e,i)=>mkRow(e,i+1)).join('');}
+  if(losers.length){html+=`<div class="sec-label" style="margin-top:8px">losers · ${losers.length}</div>`;html+=losers.map((e,i)=>mkRow(e,i+1)).join('');}
+  document.getElementById('board').innerHTML=html;
+}
+
+function updateTape(){
+  const allSyms=[...new Set([...pinnedSyms,...universeSyms])];
+  const entries=allSyms.map(s=>data[s]).filter(e=>e&&e.price>0);
+  if(!entries.length) return;
+  const sorted=[...entries].sort((a,b)=>Math.abs(b.dayChg||0)-Math.abs(a.dayChg||0)).slice(0,30);
+  const html=sorted.map(e=>{const up=(e.dayChg||0)>=0;return `<div class="tape-item"><span class="tape-sym">${e.symbol}</span><span class="tape-price">$${(e.price||0).toFixed(2)}</span><span class="${up?'up':'dn'}">${up?'+':''}${(e.dayChg||0).toFixed(2)}%</span></div>`;}).join('');
+  document.getElementById('tape').innerHTML=html+html;
+  document.getElementById('tapeWrap').style.display='block';
+}
+
+function setMode(m,el){
+  mode=m;
+  ['tabG','tabL','tabA'].forEach(id=>{const t=document.getElementById(id);t.classList.remove('active','active-red','active-blue');});
+  if(m==='gainers') el.classList.add('active');
+  else if(m==='losers') el.classList.add('active-red');
+  else el.classList.add('active-blue');
+  hardRefresh();
+}
+
+function setSort(k,el){
+  sortKey=k;
+  ['srtDay','srtChg','srtVol','srtPrice'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active');render();
+}
+
+function removeSym(sym){pinnedSyms=pinnedSyms.filter(s=>s!==sym);universeSyms=universeSyms.filter(s=>s!==sym);delete data[sym];render();updateTape();}
+
+async function addSym(){
+  const inp=document.getElementById('symInp');
+  const sym=inp.value.trim().toUpperCase();
+  inp.value='';
+  if(!sym||pinnedSyms.includes(sym)) return;
+  pinnedSyms.unshift(sym);
+  try{
+    const r=await fetch(`https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`);
+    const d=await r.json();
+    if(Array.isArray(d)&&d[0]){
+      const q=d[0];
+      data[sym]={symbol:sym,name:(q.name||sym).substring(0,24),price:q.price||0,dayChg:q.changesPercentage||0,chg:q.change||0,vol:q.volume||0};
+    }
+  }catch(e){}
+  render();updateTape();
+}
+
+document.addEventListener('keydown',e=>{if(e.target.id==='symInp'&&e.key==='Enter') addSym();});
+
+async function hardRefresh(){
+  clearInterval(refreshTimer);
+  document.getElementById('refBtn').innerHTML='<span class="spin"></span>LOADING';
+  await loadAll();
+  document.getElementById('refBtn').innerHTML='REFRESH';
+  refreshTimer=setInterval(loadAll,30000);
+}
+
+function setMeta(t){document.getElementById('metaLine').textContent=t;}
+
+function connect(){
+  const fmp=document.getElementById('fmpKey').value.trim();
+  if(!fmp){document.getElementById('keyErr').textContent='please enter your FMP key';return;}
+  FMP_KEY=fmp;
+  localStorage.setItem('fmp_key',fmp);
+  startBoard();
+}
+
+function startBoard(){
+  document.getElementById('setupBox').style.display='none';
+  document.getElementById('mainBoard').style.display='block';
+  document.getElementById('liveDot').classList.add('live');
+  updateSession();hardRefresh();
+}
+
+function disconnect(){
+  FMP_KEY='';
+  localStorage.removeItem('fmp_key');
+  clearInterval(refreshTimer);
+  data={};pinnedSyms=[];universeSyms=[];
+  document.getElementById('setupBox').style.display='block';
+  document.getElementById('mainBoard').style.display='none';
+  document.getElementById('tapeWrap').style.display='none';
+  document.getElementById('fmpKey').value='';
+  document.getElementById('liveDot').classList.remove('live');
+  document.getElementById('sessBadge').textContent='OFFLINE';
+  document.getElementById('sessBadge').className='sess-badge sess-closed';
+  setMeta('not connected');
+}
+
+updateSession();
+setInterval(updateSession,30000);
+const sk=localStorage.getItem('fmp_key');
+if(sk){FMP_KEY=sk;document.getElementById('fmpKey').value=sk;startBoard();}
+</script>
+</body>
+</html>
