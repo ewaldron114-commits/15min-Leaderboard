@@ -1,22 +1,23 @@
-// ── Step 1: FMP universe (UPDATED 2026 endpoints) ──────────────────────────
+// ── Step 1: FMP universe (Correct 2026 endpoints) ──────────────────────────
 async function fetchFMPUniverse(){
   const urls = {
     gainers: `https://financialmodelingprep.com/stable/biggest-gainers?apikey=${FMP_KEY}`,
-    losers: `https://financialmodelingprep.com/stable/biggest-losers?apikey=${FMP_KEY}`,
-    actives:`https://financialmodelingprep.com/stable/most-actives?apikey=${FMP_KEY}`
+    losers:  `https://financialmodelingprep.com/stable/biggest-losers?apikey=${FMP_KEY}`,
+    actives: `https://financialmodelingprep.com/stable/most-actives?apikey=${FMP_KEY}`
   };
 
   const r = await fetch(urls[mode]);
   if (!r.ok) {
-    if (r.status === 403) throw new Error('FMP 403 - Check your API key or try regenerating it');
-    throw new Error('FMP error ' + r.status);
+    throw new Error(`FMP error ${r.status} — ${r.status === 404 ? 'Endpoint not found' : 'Check your key'}`);
   }
   
   let list = await r.json();
   
-  // FMP sometimes wraps in object or returns array directly
-  if (list && !Array.isArray(list)) list = list.data || list.gainers || list.losers || list.actives || [];
-  
+  // Handle possible response wrappers
+  if (list && typeof list === 'object' && !Array.isArray(list)) {
+    list = list.data || list.gainers || list.losers || list.actives || list;
+  }
+
   if (!Array.isArray(list)) throw new Error('FMP: unexpected response format');
 
   const syms = [];
@@ -30,7 +31,7 @@ async function fetchFMPUniverse(){
     data[sym] = {
       symbol: sym,
       name: (item.name || item.companyName || sym).substring(0, 22),
-      price: parseFloat(item.price || item.lastPrice || 0),
+      price: parseFloat(item.price || item.lastPrice || item.close || 0),
       dayChg: parseFloat(item.changesPercentage || item.changePercentage || item.change || 0),
       chg: parseFloat(item.change || 0),
       vol: parseInt(item.volume || 0),
