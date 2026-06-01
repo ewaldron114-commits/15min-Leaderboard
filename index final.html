@@ -30,8 +30,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .setup h2{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--text);margin-bottom:10px}
 .setup p{font-size:11px;color:var(--text2);line-height:1.8;margin-bottom:16px}
 .setup a{color:var(--blue);text-decoration:none}.setup a:hover{text-decoration:underline}
-.key-row{display:flex;gap:8px;align-items:center;margin-bottom:12px}
-.key-inp{flex:1;background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:8px 12px;font-family:var(--font-mono);font-size:12px;color:var(--text);outline:none;transition:border-color 0.2s}
+.setup-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:14px}
+@media(max-width:600px){.setup-grid{grid-template-columns:1fr}}
+.setup-col label{font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;display:block;margin-bottom:5px}
+.key-inp{width:100%;background:var(--bg3);border:1px solid var(--border2);border-radius:3px;padding:8px 12px;font-family:var(--font-mono);font-size:12px;color:var(--text);outline:none;transition:border-color 0.2s}
 .key-inp:focus{border-color:var(--green)}.key-inp::placeholder{color:var(--text3)}
 .btn-connect{background:var(--green);color:#000;border:none;border-radius:3px;padding:9px 18px;font-family:var(--font-display);font-size:12px;font-weight:700;letter-spacing:0.05em;cursor:pointer;transition:opacity 0.15s;width:100%}
 .btn-connect:hover{opacity:0.85}
@@ -53,11 +55,12 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .status-bar{display:flex;gap:8px;align-items:center;margin-bottom:12px;flex-wrap:wrap}
 .status-chip{font-size:10px;padding:3px 8px;border-radius:2px;border:1px solid var(--border2);color:var(--text3);letter-spacing:0.05em}
 .status-chip.ok{border-color:var(--green);color:var(--green);background:var(--green-dim)}
-.tbl-hdr{display:grid;grid-template-columns:28px 72px 1fr 80px 100px 88px 80px;gap:8px;padding:4px 12px;font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:6px}
+.status-chip.warn{border-color:var(--amber);color:var(--amber);background:rgba(255,179,64,0.08)}
+.tbl-hdr{display:grid;grid-template-columns:28px 72px 1fr 80px 100px 90px 80px;gap:8px;padding:4px 12px;font-size:10px;color:var(--text3);letter-spacing:0.1em;text-transform:uppercase;border-bottom:1px solid var(--border);margin-bottom:6px}
 .tbl-hdr span:nth-child(n+4){text-align:right}
 .sec-label{font-size:10px;color:var(--text3);letter-spacing:0.12em;text-transform:uppercase;padding:10px 12px 4px;display:flex;align-items:center;gap:8px}
 .sec-label::after{content:'';flex:1;height:1px;background:var(--border)}
-.row{display:grid;grid-template-columns:28px 72px 1fr 80px 100px 88px 80px;align-items:center;gap:8px;padding:9px 12px;border:1px solid transparent;border-radius:3px;margin-bottom:2px;transition:all 0.15s;cursor:default}
+.row{display:grid;grid-template-columns:28px 72px 1fr 80px 100px 90px 80px;align-items:center;gap:8px;padding:9px 12px;border:1px solid transparent;border-radius:3px;margin-bottom:2px;transition:all 0.15s;cursor:default}
 .row:hover{background:var(--bg2);border-color:var(--border2)}
 .rank{font-size:11px;color:var(--text3);text-align:center}
 .sym-cell{display:flex;align-items:center;gap:4px}
@@ -69,8 +72,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 .bar-wrap{height:2px;background:var(--border);border-radius:1px;margin-top:3px}
 .bar{height:2px;border-radius:1px;transition:width 0.5s}
 .price-cell{font-size:13px;color:var(--text);text-align:right;font-variant-numeric:tabular-nums}
-.daychg-cell{font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
-.chg-cell{font-size:11px;text-align:right;font-variant-numeric:tabular-nums}
+.chg15-cell{font-size:14px;font-weight:700;text-align:right;font-variant-numeric:tabular-nums}
+.daychg-cell{font-size:11px;text-align:right;font-variant-numeric:tabular-nums;color:var(--text2)}
 .vol-cell{font-size:11px;color:var(--text2);text-align:right}
 .up{color:var(--green)}.dn{color:var(--red)}
 @keyframes flash-up{0%{background:rgba(0,217,126,0.15)}100%{background:transparent}}
@@ -93,8 +96,8 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 <div class="app">
   <div class="hdr">
     <div class="hdr-left">
-      <div class="logo"><span class="logo-dot" id="liveDot"></span>MOVER SCANNER</div>
-      <div class="subtitle">real-time top gainers · losers · most active · powered by fmp</div>
+      <div class="logo"><span class="logo-dot" id="liveDot"></span>15MIN SCANNER</div>
+      <div class="subtitle">dynamic small-cap mover leaderboard · fmp universe + finnhub 15m candles</div>
     </div>
     <div class="hdr-right">
       <span class="sess-badge sess-closed" id="sessBadge">OFFLINE</span>
@@ -105,14 +108,21 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
   <div class="setup" id="setupBox">
     <h2>CONNECT LIVE DATA</h2>
     <p>
-      One free API key — saved permanently in your browser. No daily login needed.<br><br>
-      <strong>FMP (Financial Modeling Prep)</strong> — pulls top gainers / losers / most active across ALL US stocks including small caps and OTC movers. Loads instantly. Free at <a href="https://financialmodelingprep.com/register" target="_blank">financialmodelingprep.com</a> — sign up, go to Dashboard, copy your API key.
+      Two free keys — both saved permanently in your browser. No daily login.<br><br>
+      <strong>FMP</strong> — fetches the live universe: top gainers / losers / most active across ALL US stocks including small caps. Free at <a href="https://financialmodelingprep.com/register" target="_blank">financialmodelingprep.com</a><br><br>
+      <strong>Finnhub</strong> — fetches real 1-min candles to calculate the true 15min price change for the top 20 movers. Free at <a href="https://finnhub.io/register" target="_blank">finnhub.io</a>
     </p>
-    <div class="key-row">
-      <input class="key-inp" id="fmpKey" type="password" placeholder="paste your FMP API key here..."/>
-      <button class="btn-connect" style="width:auto" onclick="connect()">CONNECT</button>
+    <div class="setup-grid">
+      <div class="setup-col">
+        <label>FMP API key</label>
+        <input class="key-inp" id="fmpKey" type="password" placeholder="paste FMP key..."/>
+      </div>
+      <div class="setup-col">
+        <label>Finnhub API key</label>
+        <input class="key-inp" id="fhKey" type="password" placeholder="paste Finnhub key..."/>
+      </div>
     </div>
-    <button class="btn-connect" onclick="connect()">CONNECT — KEY AUTO-SAVED IN BROWSER</button>
+    <button class="btn-connect" onclick="connect()">CONNECT — KEYS AUTO-SAVED IN BROWSER</button>
     <div class="key-err" id="keyErr"></div>
   </div>
 
@@ -123,10 +133,9 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
       <button class="tab" id="tabL" onclick="setMode('losers',this)">LOSERS</button>
       <button class="tab" id="tabA" onclick="setMode('actives',this)">MOST ACTIVE</button>
       <div class="divider"></div>
-      <button class="tab active" id="srtDay" onclick="setSort('dayChg',this)">DAY%</button>
-      <button class="tab" id="srtChg" onclick="setSort('chg',this)">CHG $</button>
+      <button class="tab active" id="srtChg15" onclick="setSort('chg15',this)">15M MOVE</button>
+      <button class="tab" id="srtDay" onclick="setSort('dayChg',this)">DAY%</button>
       <button class="tab" id="srtVol" onclick="setSort('vol',this)">VOLUME</button>
-      <button class="tab" id="srtPrice" onclick="setSort('price',this)">PRICE</button>
       <div class="divider"></div>
       <input class="sym-inp" id="symInp" placeholder="+ ticker" maxlength="8"/>
       <button class="btn" onclick="addSym()">ADD</button>
@@ -136,7 +145,7 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
     <div class="status-bar" id="statusBar"></div>
     <div class="tbl-hdr">
       <span>#</span><span>ticker</span><span>name</span>
-      <span>price</span><span>day chg %</span><span>chg $</span><span>volume</span>
+      <span>price</span><span>15m chg</span><span>day chg</span><span>volume</span>
     </div>
     <div id="board"><div class="empty"><span class="spin"></span>loading...</div></div>
   </div>
@@ -147,10 +156,10 @@ body::before{content:'';position:fixed;inset:0;background-image:linear-gradient(
 </div>
 
 <script>
-let FMP_KEY='';
-let mode='gainers',sortKey='dayChg';
-let data={},pinnedSyms=[],universeSyms=[];
-let refreshTimer=null;
+let FMP_KEY='', FH_KEY='';
+let mode='gainers', sortKey='chg15';
+let data={}, pinnedSyms=[], universeSyms=[];
+let loading=false, refreshTimer=null;
 
 function getSession(){
   const et=new Date(new Date().toLocaleString('en-US',{timeZone:'America/New_York'}));
@@ -162,99 +171,138 @@ function getSession(){
   return {label:'CLOSED',cls:'sess-closed'};
 }
 function updateSession(){const s=getSession();const el=document.getElementById('sessBadge');el.textContent=s.label;el.className='sess-badge '+s.cls;}
-
-async function loadAll(){
-  setMeta('fetching...');
-  document.getElementById('progFill').style.width='30%';
-  const urls={
-    gainers:`https://financialmodelingprep.com/api/v3/gainers?apikey=${FMP_KEY}`,
-    losers:`https://financialmodelingprep.com/api/v3/losers?apikey=${FMP_KEY}`,
-    actives:`https://financialmodelingprep.com/api/v3/actives?apikey=${FMP_KEY}`
-  };
-  try{
-    const r=await fetch(urls[mode]);
-    if(!r.ok) throw new Error('API error '+r.status);
-    const list=await r.json();
-    if(!Array.isArray(list)) throw new Error('unexpected response — check your FMP key');
-
-    universeSyms=[];
-    // Keep pinned data, reset universe data
-    for(const sym of Object.keys(data)){
-      if(!pinnedSyms.includes(sym)) delete data[sym];
-    }
-
-    for(const item of list.slice(0,50)){
-      const sym=item.ticker||item.symbol;
-      if(!sym) continue;
-      universeSyms.push(sym);
-      const prev=data[sym];
-      const newDayChg=parseFloat(item.changesPercentage||item.changePercentage||0);
-      data[sym]={
-        symbol:sym,
-        name:(item.companyName||item.name||sym).substring(0,24),
-        price:parseFloat(item.price||item.lastSalePrice||0),
-        dayChg:newDayChg,
-        chg:parseFloat(item.change||0),
-        vol:parseInt(item.volume||0),
-      };
-      // Flash on update
-      if(prev&&document.getElementById('row-'+sym)){
-        const row=document.getElementById('row-'+sym);
-        row.classList.remove('flash-up','flash-dn');
-        void row.offsetWidth;
-        if(newDayChg>prev.dayChg) row.classList.add('flash-up');
-        else if(newDayChg<prev.dayChg) row.classList.add('flash-dn');
-        setTimeout(()=>row&&row.classList.remove('flash-up','flash-dn'),800);
-      }
-    }
-
-    // Also fetch pinned symbols via quote endpoint
-    for(const sym of pinnedSyms){
-      if(data[sym]&&data[sym].price>0) continue; // already have it
-      try{
-        const qr=await fetch(`https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`);
-        const qd=await qr.json();
-        if(Array.isArray(qd)&&qd[0]){
-          const q=qd[0];
-          data[sym]={symbol:sym,name:(q.name||sym).substring(0,24),price:q.price||0,dayChg:q.changesPercentage||0,chg:q.change||0,vol:q.volume||0};
-        }
-      }catch(e){}
-    }
-
-    document.getElementById('progFill').style.width='100%';
-    setTimeout(()=>document.getElementById('progFill').style.width='0%',400);
-    render();updateTape();
-    document.getElementById('statusBar').innerHTML=`<span class="status-chip ok">FMP live · ${universeSyms.length} stocks</span><span class="status-chip">mode: ${mode.toUpperCase()}</span><span class="status-chip">next refresh: 30s</span>`;
-    setMeta('updated '+new Date().toLocaleTimeString()+' · auto-refresh 30s');
-  }catch(e){
-    document.getElementById('progFill').style.width='0%';
-    document.getElementById('statusBar').innerHTML=`<span class="status-chip" style="border-color:var(--red);color:var(--red)">error: ${e.message}</span>`;
-    setMeta('error — check your FMP key');
-  }
-}
-
+function delay(ms){return new Promise(r=>setTimeout(r,ms));}
 function fmtVol(v){if(!v) return '—';if(v>=1e9) return (v/1e9).toFixed(1)+'B';if(v>=1e6) return (v/1e6).toFixed(1)+'M';if(v>=1e3) return (v/1e3).toFixed(0)+'K';return v;}
 
+// ── Step 1: FMP universe (correct endpoints) ──────────────────────────
+async function fetchFMPUniverse(){
+  const urls={
+    gainers:`https://financialmodelingprep.com/api/v3/stock_market/gainers?apikey=${FMP_KEY}`,
+    losers: `https://financialmodelingprep.com/api/v3/stock_market/losers?apikey=${FMP_KEY}`,
+    actives:`https://financialmodelingprep.com/api/v3/stock_market/actives?apikey=${FMP_KEY}`
+  };
+  const r=await fetch(urls[mode]);
+  if(!r.ok) throw new Error('FMP error '+r.status);
+  const list=await r.json();
+  if(!Array.isArray(list)) throw new Error('FMP: unexpected response — check your key');
+  const syms=[];
+  for(const item of list.slice(0,20)){ // top 20 only for Finnhub rate limit
+    const sym=item.symbol||item.ticker;
+    if(!sym) continue;
+    syms.push(sym);
+    const prev=data[sym];
+    data[sym]={
+      symbol:sym,
+      name:(item.name||item.companyName||sym).substring(0,22),
+      price:parseFloat(item.price||0),
+      dayChg:parseFloat(item.changesPercentage||item.changePercentage||0),
+      chg:parseFloat(item.change||0),
+      vol:parseInt(item.volume||0),
+      chg15:prev?.chg15||0,
+    };
+  }
+  return syms;
+}
+
+// ── Step 2: Finnhub 15min candles for top 20 ─────────────────────────
+async function fetch15min(sym){
+  const now=Math.floor(Date.now()/1000);
+  const from=now-1200;
+  try{
+    const r=await fetch(`https://finnhub.io/api/v1/stock/candle?symbol=${encodeURIComponent(sym)}&resolution=1&from=${from}&to=${now}&token=${FH_KEY}`);
+    if(!r.ok) return null;
+    const d=await r.json();
+    if(!d||d.s==='no_data'||!d.c||d.c.length<2) return null;
+    const closes=d.c,times=d.t,cur=closes[closes.length-1],target=now-900;
+    let p15=closes[0];
+    for(let i=0;i<times.length;i++) if(times[i]<=target) p15=closes[i];
+    return {price:cur,chg15:((cur-p15)/p15)*100};
+  }catch(e){return null;}
+}
+
+// ── Main load ─────────────────────────────────────────────────────────
+async function loadAll(){
+  if(loading) return;
+  loading=true;
+  setMeta('fetching FMP universe...');
+  document.getElementById('progFill').style.width='10%';
+
+  try{
+    // Step 1: get universe from FMP instantly
+    const fmpSyms=await fetchFMPUniverse();
+    universeSyms=fmpSyms;
+    document.getElementById('progFill').style.width='30%';
+    render(); // show FMP data immediately
+
+    setMeta('fetching 15min candles ('+fmpSyms.length+' stocks)...');
+
+    // Step 2: enrich top 20 with real 15min candles from Finnhub
+    const allSyms=[...new Set([...pinnedSyms,...fmpSyms])];
+    let done=0;
+    for(const sym of allSyms){
+      const candle=await fetch15min(sym);
+      if(candle){
+        const prev=data[sym];
+        const prevChg=prev?.chg15||0;
+        if(data[sym]){
+          data[sym].price=candle.price||data[sym].price;
+          data[sym].chg15=candle.chg15;
+        }
+        if(prev&&document.getElementById('row-'+sym)){
+          const row=document.getElementById('row-'+sym);
+          row.classList.remove('flash-up','flash-dn');
+          void row.offsetWidth;
+          if(candle.chg15>prevChg) row.classList.add('flash-up');
+          else if(candle.chg15<prevChg) row.classList.add('flash-dn');
+          setTimeout(()=>row&&row.classList.remove('flash-up','flash-dn'),800);
+        }
+      }
+      done++;
+      document.getElementById('progFill').style.width=(30+Math.round(done/allSyms.length*70))+'%';
+      if(done%5===0){render();updateTape();}
+      await delay(150); // safe rate for free Finnhub tier at 20 stocks
+    }
+
+    document.getElementById('progFill').style.width='0%';
+    render(); updateTape();
+    document.getElementById('statusBar').innerHTML=
+      `<span class="status-chip ok">FMP: ${fmpSyms.length} stocks</span>`+
+      `<span class="status-chip ok">15m candles: live</span>`+
+      `<span class="status-chip">mode: ${mode.toUpperCase()}</span>`+
+      `<span class="status-chip">next: 60s</span>`;
+    setMeta('updated '+new Date().toLocaleTimeString()+' · auto-refresh 60s');
+
+  }catch(e){
+    document.getElementById('progFill').style.width='0%';
+    document.getElementById('statusBar').innerHTML=
+      `<span class="status-chip" style="border-color:var(--red);color:var(--red)">error: ${e.message}</span>`;
+    setMeta('error — check your keys');
+    console.error(e);
+  }
+
+  loading=false;
+}
+
+// ── Render ────────────────────────────────────────────────────────────
 function render(){
   updateSession();
   const allSyms=[...new Set([...pinnedSyms,...universeSyms])];
   const entries=allSyms.map(s=>data[s]).filter(e=>e&&e.price>0);
   if(!entries.length){document.getElementById('board').innerHTML='<div class="empty"><span class="spin"></span>fetching data...</div>';return;}
   const sorted=[...entries].sort((a,b)=>{
+    if(sortKey==='chg15') return Math.abs(b.chg15||0)-Math.abs(a.chg15||0);
     if(sortKey==='dayChg') return Math.abs(b.dayChg||0)-Math.abs(a.dayChg||0);
-    if(sortKey==='chg') return Math.abs(b.chg||0)-Math.abs(a.chg||0);
     if(sortKey==='vol') return (b.vol||0)-(a.vol||0);
-    if(sortKey==='price') return b.price-a.price;
     return 0;
   });
-  const gainers=sorted.filter(e=>(e.dayChg||0)>=0);
-  const losers=sorted.filter(e=>(e.dayChg||0)<0);
-  const maxAbs=Math.max(...sorted.map(e=>Math.abs(e.dayChg||0)),0.01);
+  const gainers=sorted.filter(e=>(e.chg15||e.dayChg||0)>=0);
+  const losers=sorted.filter(e=>(e.chg15||e.dayChg||0)<0);
+  const maxAbs=Math.max(...sorted.map(e=>Math.abs(e.chg15||e.dayChg||0)),0.01);
   function mkRow(e,i){
-    const up=(e.dayChg||0)>=0;
-    const pct=(e.dayChg||0).toFixed(2);
-    const chgDollar=(e.chg||0).toFixed(2);
-    const bw=Math.round(Math.abs(e.dayChg||0)/maxAbs*100);
+    const chg15val=e.chg15||0, dayChgval=e.dayChg||0;
+    const up=chg15val>=0, upDay=dayChgval>=0;
+    const p15=chg15val.toFixed(2), pDay=dayChgval.toFixed(2);
+    const bw=Math.round(Math.abs(chg15val||dayChgval)/maxAbs*100);
     const bc=up?'var(--green)':'var(--red)';
     const pinned=pinnedSyms.includes(e.symbol);
     return `<div class="row" id="row-${e.symbol}">
@@ -262,8 +310,8 @@ function render(){
       <div class="sym-cell"><span class="sym">${e.symbol}</span>${pinned?'<span class="pin-badge">PIN</span>':''}<button class="del-btn" onclick="removeSym('${e.symbol}')">x</button></div>
       <div class="name-cell"><div class="n">${e.name||''}</div><div class="bar-wrap"><div class="bar" style="width:${bw}%;background:${bc}"></div></div></div>
       <span class="price-cell">$${(e.price||0).toFixed(2)}</span>
-      <span class="daychg-cell ${up?'up':'dn'}">${up?'+':''}${pct}%</span>
-      <span class="chg-cell ${up?'up':'dn'}">${up?'+':''}$${chgDollar}</span>
+      <span class="chg15-cell ${up?'up':'dn'}">${up?'+':''}${p15}%</span>
+      <span class="daychg-cell ${upDay?'up':'dn'}">${upDay?'+':''}${pDay}%</span>
       <span class="vol-cell">${fmtVol(e.vol)}</span>
     </div>`;
   }
@@ -277,8 +325,11 @@ function updateTape(){
   const allSyms=[...new Set([...pinnedSyms,...universeSyms])];
   const entries=allSyms.map(s=>data[s]).filter(e=>e&&e.price>0);
   if(!entries.length) return;
-  const sorted=[...entries].sort((a,b)=>Math.abs(b.dayChg||0)-Math.abs(a.dayChg||0)).slice(0,30);
-  const html=sorted.map(e=>{const up=(e.dayChg||0)>=0;return `<div class="tape-item"><span class="tape-sym">${e.symbol}</span><span class="tape-price">$${(e.price||0).toFixed(2)}</span><span class="${up?'up':'dn'}">${up?'+':''}${(e.dayChg||0).toFixed(2)}%</span></div>`;}).join('');
+  const sorted=[...entries].sort((a,b)=>Math.abs(b.chg15||b.dayChg||0)-Math.abs(a.chg15||a.dayChg||0)).slice(0,25);
+  const html=sorted.map(e=>{
+    const val=e.chg15||e.dayChg||0, up=val>=0;
+    return `<div class="tape-item"><span class="tape-sym">${e.symbol}</span><span class="tape-price">$${(e.price||0).toFixed(2)}</span><span class="${up?'up':'dn'}">${up?'+':''}${val.toFixed(2)}%</span></div>`;
+  }).join('');
   document.getElementById('tape').innerHTML=html+html;
   document.getElementById('tapeWrap').style.display='block';
 }
@@ -289,13 +340,14 @@ function setMode(m,el){
   if(m==='gainers') el.classList.add('active');
   else if(m==='losers') el.classList.add('active-red');
   else el.classList.add('active-blue');
+  data={}; universeSyms=[];
   hardRefresh();
 }
 
 function setSort(k,el){
   sortKey=k;
-  ['srtDay','srtChg','srtVol','srtPrice'].forEach(id=>document.getElementById(id).classList.remove('active'));
-  el.classList.add('active');render();
+  ['srtChg15','srtDay','srtVol'].forEach(id=>document.getElementById(id).classList.remove('active'));
+  el.classList.add('active'); render();
 }
 
 function removeSym(sym){pinnedSyms=pinnedSyms.filter(s=>s!==sym);universeSyms=universeSyms.filter(s=>s!==sym);delete data[sym];render();updateTape();}
@@ -309,12 +361,11 @@ async function addSym(){
   try{
     const r=await fetch(`https://financialmodelingprep.com/api/v3/quote/${sym}?apikey=${FMP_KEY}`);
     const d=await r.json();
-    if(Array.isArray(d)&&d[0]){
-      const q=d[0];
-      data[sym]={symbol:sym,name:(q.name||sym).substring(0,24),price:q.price||0,dayChg:q.changesPercentage||0,chg:q.change||0,vol:q.volume||0};
-    }
+    if(Array.isArray(d)&&d[0]){const q=d[0];data[sym]={symbol:sym,name:(q.name||sym).substring(0,22),price:q.price||0,dayChg:q.changesPercentage||0,chg:q.change||0,vol:q.volume||0,chg15:0};}
+    const candle=await fetch15min(sym);
+    if(candle&&data[sym]){data[sym].price=candle.price;data[sym].chg15=candle.chg15;}
   }catch(e){}
-  render();updateTape();
+  render(); updateTape();
 }
 
 document.addEventListener('keydown',e=>{if(e.target.id==='symInp'&&e.key==='Enter') addSym();});
@@ -324,16 +375,18 @@ async function hardRefresh(){
   document.getElementById('refBtn').innerHTML='<span class="spin"></span>LOADING';
   await loadAll();
   document.getElementById('refBtn').innerHTML='REFRESH';
-  refreshTimer=setInterval(loadAll,30000);
+  refreshTimer=setInterval(loadAll,60000);
 }
 
 function setMeta(t){document.getElementById('metaLine').textContent=t;}
 
 function connect(){
   const fmp=document.getElementById('fmpKey').value.trim();
-  if(!fmp){document.getElementById('keyErr').textContent='please enter your FMP key';return;}
-  FMP_KEY=fmp;
+  const fh=document.getElementById('fhKey').value.trim();
+  if(!fmp||!fh){document.getElementById('keyErr').textContent='both keys required';return;}
+  FMP_KEY=fmp; FH_KEY=fh;
   localStorage.setItem('fmp_key',fmp);
+  localStorage.setItem('fh_key',fh);
   startBoard();
 }
 
@@ -341,18 +394,18 @@ function startBoard(){
   document.getElementById('setupBox').style.display='none';
   document.getElementById('mainBoard').style.display='block';
   document.getElementById('liveDot').classList.add('live');
-  updateSession();hardRefresh();
+  updateSession(); hardRefresh();
 }
 
 function disconnect(){
-  FMP_KEY='';
-  localStorage.removeItem('fmp_key');
+  FMP_KEY=''; FH_KEY='';
+  localStorage.removeItem('fmp_key'); localStorage.removeItem('fh_key');
   clearInterval(refreshTimer);
-  data={};pinnedSyms=[];universeSyms=[];
+  data={}; pinnedSyms=[]; universeSyms=[];
   document.getElementById('setupBox').style.display='block';
   document.getElementById('mainBoard').style.display='none';
   document.getElementById('tapeWrap').style.display='none';
-  document.getElementById('fmpKey').value='';
+  document.getElementById('fmpKey').value=''; document.getElementById('fhKey').value='';
   document.getElementById('liveDot').classList.remove('live');
   document.getElementById('sessBadge').textContent='OFFLINE';
   document.getElementById('sessBadge').className='sess-badge sess-closed';
@@ -361,8 +414,9 @@ function disconnect(){
 
 updateSession();
 setInterval(updateSession,30000);
-const sk=localStorage.getItem('fmp_key');
-if(sk){FMP_KEY=sk;document.getElementById('fmpKey').value=sk;startBoard();}
+const sk1=localStorage.getItem('fmp_key');
+const sk2=localStorage.getItem('fh_key');
+if(sk1&&sk2){FMP_KEY=sk1;FH_KEY=sk2;document.getElementById('fmpKey').value=sk1;document.getElementById('fhKey').value=sk2;startBoard();}
 </script>
 </body>
 </html>
