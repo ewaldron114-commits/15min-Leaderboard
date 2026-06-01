@@ -1,0 +1,41 @@
+// ── Step 1: FMP universe (UPDATED 2026 endpoints) ──────────────────────────
+async function fetchFMPUniverse(){
+  const urls = {
+    gainers: `https://financialmodelingprep.com/stable/biggest-gainers?apikey=${FMP_KEY}`,
+    losers: `https://financialmodelingprep.com/stable/biggest-losers?apikey=${FMP_KEY}`,
+    actives:`https://financialmodelingprep.com/stable/most-actives?apikey=${FMP_KEY}`
+  };
+
+  const r = await fetch(urls[mode]);
+  if (!r.ok) {
+    if (r.status === 403) throw new Error('FMP 403 - Check your API key or try regenerating it');
+    throw new Error('FMP error ' + r.status);
+  }
+  
+  let list = await r.json();
+  
+  // FMP sometimes wraps in object or returns array directly
+  if (list && !Array.isArray(list)) list = list.data || list.gainers || list.losers || list.actives || [];
+  
+  if (!Array.isArray(list)) throw new Error('FMP: unexpected response format');
+
+  const syms = [];
+  for (const item of list.slice(0, 20)) {
+    const sym = item.symbol || item.ticker;
+    if (!sym) continue;
+    
+    syms.push(sym);
+    const prev = data[sym];
+    
+    data[sym] = {
+      symbol: sym,
+      name: (item.name || item.companyName || sym).substring(0, 22),
+      price: parseFloat(item.price || item.lastPrice || 0),
+      dayChg: parseFloat(item.changesPercentage || item.changePercentage || item.change || 0),
+      chg: parseFloat(item.change || 0),
+      vol: parseInt(item.volume || 0),
+      chg15: prev?.chg15 || 0,
+    };
+  }
+  return syms;
+}
