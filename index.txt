@@ -1,97 +1,603 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8"/>
-<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-<title>15min Live Scanner</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
-<style>
-/* (same style as before - omitted for brevity, copy from previous message if needed) */
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Penny Momentum Screener | Live ROC Scanner</title>
+    <style>
+        :root {
+            --bg: #0a0e14;
+            --surface: #141b22;
+            --surface-2: #1c2330;
+            --border: #2a3340;
+            --text: #c8d6e5;
+            --text-muted: #6b7d95;
+            --green: #00d4aa;
+            --green-bg: rgba(0, 212, 170, 0.1);
+            --red: #ff4757;
+            --red-bg: rgba(255, 71, 87, 0.1);
+            --accent: #4dabf7;
+            --orange: #ffa502;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.5;
+        }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+        header h1 { font-size: 1.5rem; color: var(--accent); }
+        .header-controls { display: flex; gap: 20px; align-items: center; }
+        .session-indicator { display: flex; align-items: center; gap: 8px; font-size: 0.85rem; color: var(--text-muted); }
+        .session-indicator .dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: var(--text-muted);
+            animation: pulse 2s infinite;
+        }
+        .session-indicator .dot.active { background: var(--green); box-shadow: 0 0 8px var(--green); }
+        .session-indicator .dot.closed { background: var(--red); }
+        .market-clock { font-size: 1.2rem; font-weight: bold; color: var(--text); }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+        .api-key-section { display: flex; justify-content: center; margin: 40px 0; }
+        .api-key-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 30px;
+            max-width: 500px;
+            width: 100%;
+        }
+        .api-key-card h3 { margin-bottom: 10px; color: var(--accent); }
+        .api-key-card a { color: var(--accent); }
+        .input-group { display: flex; gap: 10px; margin: 15px 0; }
+        .input-group input { flex: 1; }
+        .note { font-size: 0.8rem; color: var(--text-muted); margin-top: 8px; }
+        .controls {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            align-items: flex-end;
+        }
+        .control-group { display: flex; flex-direction: column; gap: 5px; }
+        .control-group label {
+            font-size: 0.75rem;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            letter-spacing: 0.5px;
+        }
+        .range-inputs { display: flex; align-items: center; gap: 8px; }
+        input, select {
+            background: var(--surface-2);
+            border: 1px solid var(--border);
+            color: var(--text);
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-family: inherit;
+            font-size: 0.9rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        input:focus, select:focus { border-color: var(--accent); }
+        input[type="number"] { width: 100px; }
+        .btn-group { display: flex; gap: 8px; align-items: flex-end; }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-family: inherit;
+            font-size: 0.9rem;
+            font-weight: 600;
+            transition: all 0.2s;
+        }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .btn-primary { background: var(--accent); color: #000; }
+        .btn-success { background: var(--green); color: #000; }
+        .btn-danger { background: var(--red); color: #fff; }
+        .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+        .btn:hover:not(:disabled) { opacity: 0.85; transform: translateY(-1px); }
+        .status-bar {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px 20px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+        .results {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .results-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
+        .results-header h2 { font-size: 1.1rem; color: var(--green); }
+        #resultCount { font-size: 0.85rem; color: var(--text-muted); }
+        .table-container { overflow-x: auto; }
+        table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+        thead th {
+            text-align: left;
+            padding: 10px;
+            color: var(--text-muted);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.7rem;
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            background: var(--surface);
+        }
+        tbody td { padding: 10px; border-bottom: 1px solid var(--border); }
+        tbody tr:hover { background: var(--surface-2); }
+        .placeholder td { text-align: center; color: var(--text-muted); padding: 40px; }
+        .roc-positive { color: var(--green); font-weight: bold; }
+        .roc-negative { color: var(--red); }
+        .roc-strong { background: var(--green-bg); padding: 2px 6px; border-radius: 3px; }
+        .alerts {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 20px;
+        }
+        .alerts h3 { font-size: 1rem; margin-bottom: 10px; }
+        .alert-log { max-height: 300px; overflow-y: auto; font-size: 0.8rem; }
+        .alert-entry {
+            padding: 8px;
+            border-left: 3px solid var(--orange);
+            margin-bottom: 5px;
+            background: var(--surface-2);
+            border-radius: 0 4px 4px 0;
+        }
+        .alert-entry .time { color: var(--text-muted); font-size: 0.7rem; }
+        footer {
+            text-align: center;
+            color: var(--text-muted);
+            font-size: 0.75rem;
+            padding: 20px 0;
+            border-top: 1px solid var(--border);
+            margin-top: 20px;
+        }
+        @media (max-width: 768px) {
+            .controls { flex-direction: column; }
+            .btn-group { flex-wrap: wrap; }
+            header { flex-direction: column; text-align: center; }
+            .header-controls { flex-direction: column; }
+        }
+    </style>
 </head>
 <body>
-<!-- (same HTML body as before) -->
-<div class="app">
-  <!-- ... keep everything the same up to the script ... -->
-</div>
-
-<script>
-let FMP_KEY='', FH_KEY='';
-let mode='gainers', sortKey='chg15';
-let data={}, pinnedSyms=[], universeSyms=[];
-let loading=false, refreshTimer=null;
-
-// ... (getSession, updateSession, delay, fmtVol functions stay the same)
-
-async function fetchFMPUniverse(){
-  const urls = {
-    gainers: `https://financialmodelingprep.com/stable/biggest-gainers?apikey=${FMP_KEY}`,
-    losers:  `https://financialmodelingprep.com/stable/biggest-losers?apikey=${FMP_KEY}`,
-    actives: `https://financialmodelingprep.com/stable/most-actives?apikey=${FMP_KEY}`
-  };
-
-  console.log('Fetching:', urls[mode]); // for debugging
-
-  const r = await fetch(urls[mode]);
-  console.log('FMP Status:', r.status);
-
-  if (!r.ok) {
-    throw new Error(`FMP error ${r.status} - Check your API key or regenerate it`);
-  }
-  
-  let list = await r.json();
-  if (list && typeof list === 'object' && !Array.isArray(list)) {
-    list = list.data || list;
-  }
-
-  if (!Array.isArray(list)) throw new Error('Unexpected FMP response');
-
-  const syms = [];
-  for (const item of list.slice(0, 20)) {
-    const sym = item.symbol || item.ticker;
-    if (!sym) continue;
-    syms.push(sym);
-    data[sym] = {
-      symbol: sym,
-      name: (item.name || item.companyName || sym).substring(0, 22),
-      price: parseFloat(item.price || item.lastPrice || item.close || 0),
-      dayChg: parseFloat(item.changesPercentage || item.changePercentage || item.change || 0),
-      chg: parseFloat(item.change || 0),
-      vol: parseInt(item.volume || 0),
-      chg15: data[sym]?.chg15 || 0,
-    };
-  }
-  return syms;
-}
-
-// ... rest of the functions (fetch15min, loadAll, render, etc.) stay the same as my previous full version
-
-// FIXED addSym with new quote endpoint
-async function addSym(){
-  const inp=document.getElementById('symInp');
-  const sym=inp.value.trim().toUpperCase();
-  inp.value='';
-  if(!sym||pinnedSyms.includes(sym)) return;
-  pinnedSyms.unshift(sym);
-  try{
-    // Updated quote endpoint
-    const r=await fetch(`https://financialmodelingprep.com/stable/quote/${sym}?apikey=${FMP_KEY}`);
-    const d=await r.json();
-    if(d && !Array.isArray(d)){ 
-      data[sym]={symbol:sym, name:(d.name||sym).substring(0,22), price:d.price||0, dayChg:d.changesPercentage||0, chg:d.change||0, vol:d.volume||0, chg15:0};
-    }
-    const candle=await fetch15min(sym);
-    if(candle && data[sym]){
-      data[sym].price = candle.price;
-      data[sym].chg15 = candle.chg15;
-    }
-  }catch(e){ console.log('Add symbol error', e); }
-  render(); updateTape();
-}
-
-// ... (keep the rest of the script exactly as in my previous full HTML)
-
-</script>
+    <div class="container">
+        <header>
+            <h1>⚡ Penny Momentum Screener</h1>
+            <div class="header-controls">
+                <div class="session-indicator" id="sessionIndicator">
+                    <span class="dot"></span>
+                    <span id="sessionText">Loading...</span>
+                </div>
+                <div class="market-clock" id="marketClock">--:--:-- ET</div>
+            </div>
+        </header>
+        <div class="api-key-section" id="apiKeySection">
+            <div class="api-key-card">
+                <h3>🔑 Enter Polygon.io API Key</h3>
+                <p>Get your free key at <a href="https://polygon.io" target="_blank" rel="noopener">polygon.io</a></p>
+                <div class="input-group">
+                    <input type="password" id="apiKeyInput" placeholder="Paste your API key here..." autocomplete="off">
+                    <button id="saveKeyBtn" class="btn btn-primary">Save & Connect</button>
+                </div>
+                <p class="note">⚠️ Free tier: 5 calls/min. Starter tier ($29/mo) recommended for live scanning.</p>
+                <p class="note">Key is stored locally in your browser only.</p>
+            </div>
+        </div>
+        <div class="controls" id="controls" style="display:none;">
+            <div class="control-group">
+                <label>Market Cap Range</label>
+                <div class="range-inputs">
+                    <input type="number" id="minMarketCap" value="1" min="1" step="1"> 
+                    <span>to</span>
+                    <input type="number" id="maxMarketCap" value="200" min="1" step="1">
+                    <span>Million</span>
+                </div>
+            </div>
+            <div class="control-group">
+                <label>Min Price</label>
+                <input type="number" id="minPrice" value="0.50" min="0.01" step="0.01">
+            </div>
+            <div class="control-group">
+                <label>Min Volume (session)</label>
+                <input type="number" id="minVolume" value="500000" min="10000" step="10000">
+            </div>
+            <div class="control-group">
+                <label>Max Float</label>
+                <input type="number" id="maxFloat" value="50" min="1" step="1">
+                <span>Million</span>
+            </div>
+            <div class="control-group">
+                <label>Min ROC %</label>
+                <input type="number" id="minROC" value="3" min="0.5" step="0.5">
+            </div>
+            <div class="control-group">
+                <label>Scan Interval</label>
+                <select id="scanInterval">
+                    <option value="30">30 seconds</option>
+                    <option value="60" selected>1 minute</option>
+                    <option value="120">2 minutes</option>
+                    <option value="300">5 minutes</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>ROC Timeframe</label>
+                <select id="rocTimeframe">
+                    <option value="15min">15 Minutes</option>
+                    <option value="1hour">1 Hour</option>
+                    <option value="both" selected>Both (max)</option>
+                </select>
+            </div>
+            <div class="btn-group">
+                <button id="startScanBtn" class="btn btn-success">▶ Start Scanning</button>
+                <button id="stopScanBtn" class="btn btn-danger" disabled>⏹ Stop</button>
+                <button id="clearKeyBtn" class="btn btn-outline">🔒 Clear Key</button>
+            </div>
+        </div>
+        <div class="status-bar" id="statusBar" style="display:none;">
+            <span id="scanStatus">Ready</span>
+            <span id="lastScan">Last scan: --</span>
+            <span id="apiCalls">API calls: 0</span>
+            <span id="tickersScanned">Tickers: 0</span>
+        </div>
+        <div class="results" id="results" style="display:none;">
+            <div class="results-header">
+                <h2>🔥 Top Momentum Movers</h2>
+                <span id="resultCount">0 results</span>
+            </div>
+            <div class="table-container">
+                <table id="resultsTable">
+                    <thead>
+                        <tr>
+                            <th>Ticker</th>
+                            <th>Price</th>
+                            <th>Mkt Cap</th>
+                            <th>ROC 15m</th>
+                            <th>ROC 1H</th>
+                            <th>Volume</th>
+                            <th>Float</th>
+                            <th>Float Rot.</th>
+                            <th>Session</th>
+                        </tr>
+                    </thead>
+                    <tbody id="resultsBody">
+                        <tr class="placeholder"><td colspan="9">Press "Start Scanning" to begin...</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="alerts" id="alerts" style="display:none;">
+            <h3>📋 Alert Log</h3>
+            <div class="alert-log" id="alertLog"></div>
+        </div>
+        <footer>
+            <p>Data: Polygon.io | Session times: Pre (4am-9:30am), Regular (9:30am-4pm), Post (4pm-8pm) ET</p>
+            <p>⚠️ Not financial advice. For informational purposes only.</p>
+        </footer>
+    </div>
+    <script>
+        const STATE = {
+            apiKey: null,
+            isScanning: false,
+            scanTimer: null,
+            apiCallCount: 0,
+            tickersUniverse: [],
+            results: [],
+            alertLog: [],
+        };
+        const $ = (id) => document.getElementById(id);
+        const dom = {
+            apiKeySection: $('apiKeySection'), apiKeyInput: $('apiKeyInput'),
+            saveKeyBtn: $('saveKeyBtn'), clearKeyBtn: $('clearKeyBtn'),
+            controls: $('controls'), sessionIndicator: $('sessionIndicator'),
+            sessionText: $('sessionText'), marketClock: $('marketClock'),
+            startScanBtn: $('startScanBtn'), stopScanBtn: $('stopScanBtn'),
+            statusBar: $('statusBar'), scanStatus: $('scanStatus'),
+            lastScan: $('lastScan'), apiCalls: $('apiCalls'),
+            tickersScanned: $('tickersScanned'), results: $('results'),
+            resultsBody: $('resultsBody'), resultCount: $('resultCount'),
+            alerts: $('alerts'), alertLog: $('alertLog'),
+        };
+        const EXCHANGE_CODES = ['XNAS', 'XNYS', 'XASE'];
+        function formatMarketCap(v) {
+            if (!v || v === 0) return 'N/A';
+            if (v >= 1e9) return '$' + (v / 1e9).toFixed(2) + 'B';
+            if (v >= 1e6) return '$' + (v / 1e6).toFixed(1) + 'M';
+            return '$' + v.toLocaleString();
+        }
+        function formatVolume(v) {
+            if (!v) return 'N/A';
+            if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+            if (v >= 1e3) return (v / 1e3).toFixed(0) + 'K';
+            return v.toString();
+        }
+        function formatPercent(v) {
+            if (v === null || v === undefined || isNaN(v)) return '--';
+            return v.toFixed(2) + '%';
+        }
+        function getCurrentSession() {
+            const now = new Date();
+            const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            const h = et.getHours(), m = et.getMinutes(), d = et.getDay();
+            if (d === 0 || d === 6) return 'closed';
+            const t = h * 60 + m;
+            if (t >= 240 && t < 570) return 'pre';
+            if (t >= 570 && t < 960) return 'regular';
+            if (t >= 960 && t < 1200) return 'post';
+            return 'closed';
+        }
+        function updateClock() {
+            const now = new Date();
+            const et = new Date(now.toLocaleString('en-US', { timeZone: 'America/New_York' }));
+            dom.marketClock.textContent = 
+                `${et.getHours().toString().padStart(2,'0')}:${et.getMinutes().toString().padStart(2,'0')}:${et.getSeconds().toString().padStart(2,'0')} ET`;
+        }
+        function updateSessionIndicator() {
+            const s = getCurrentSession();
+            const dot = dom.sessionIndicator.querySelector('.dot');
+            dot.classList.remove('active','closed');
+            if (s === 'pre') { dom.sessionText.textContent = 'Pre-Market (4am-9:30am)'; dot.classList.add('active'); }
+            else if (s === 'regular') { dom.sessionText.textContent = 'Regular Hours (9:30am-4pm)'; dot.classList.add('active'); }
+            else if (s === 'post') { dom.sessionText.textContent = 'Post-Market (4pm-8pm)'; dot.classList.add('active'); }
+            else { dom.sessionText.textContent = 'Market Closed'; dot.classList.add('closed'); }
+        }
+        function addAlert(msg, type) {
+            const time = new Date().toLocaleTimeString('en-US', { timeZone: 'America/New_York' });
+            STATE.alertLog.unshift({ time, message: msg, type });
+            if (STATE.alertLog.length > 100) STATE.alertLog.pop();
+            renderAlerts();
+        }
+        function renderAlerts() {
+            dom.alertLog.innerHTML = STATE.alertLog.map(a => 
+                `<div class="alert-entry"><span class="time">${a.time} ET</span> ${a.message}</div>`).join('');
+            dom.alerts.style.display = STATE.alertLog.length ? 'block' : 'none';
+        }
+        async function polygonRequest(endpoint, params = {}) {
+            if (!STATE.apiKey) throw new Error('No API key');
+            const url = new URL(`https://api.polygon.io${endpoint}`);
+            url.searchParams.append('apiKey', STATE.apiKey);
+            Object.entries(params).forEach(([k,v]) => url.searchParams.append(k,v));
+            const res = await fetch(url.toString());
+            if (res.status === 429) throw new Error('Rate limit exceeded');
+            if (!res.ok) throw new Error(`API error: ${res.status}`);
+            STATE.apiCallCount++;
+            dom.apiCalls.textContent = `API calls: ${STATE.apiCallCount}`;
+            return res.json();
+        }
+        async function fetchAllTickers() {
+            const all = [];
+            let cursor = null;
+            addAlert('Fetching ticker universe...');
+            do {
+                const p = { market: 'stocks', exchange: EXCHANGE_CODES.join(','), active: 'true', type: 'CS', limit: 1000 };
+                if (cursor) p.cursor = cursor;
+                const data = await polygonRequest('/v3/reference/tickers', p);
+                if (data.results) all.push(...data.results.map(t => t.ticker));
+                cursor = data.next_url ? new URL(data.next_url).searchParams.get('cursor') : null;
+                await new Promise(r => setTimeout(r, 200));
+            } while (cursor);
+            addAlert(`Loaded ${all.length} tickers`);
+            return all;
+        }
+        async function fetchSnapshots(tickers) {
+            const all = [];
+            for (let i = 0; i < tickers.length; i += 250) {
+                const batch = tickers.slice(i, i+250).join(',');
+                try {
+                    const data = await polygonRequest('/v2/snapshot/locale/us/markets/stocks/tickers', { tickers: batch });
+                    if (data.tickers) all.push(...data.tickers);
+                } catch(e) { console.warn('Batch fail:', e.message); }
+                await new Promise(r => setTimeout(r, 300));
+            }
+            return all;
+        }
+        async function fetchBars(ticker, timespan='minute', multiplier=15, limit=10) {
+            const today = new Date().toISOString().split('T')[0];
+            try {
+                const data = await polygonRequest(`/v2/aggs/ticker/${ticker}/range/${multiplier}/${timespan}/${today}/${today}`, { adjusted:'true', sort:'desc', limit });
+                return data.results || [];
+            } catch(e) { return []; }
+        }
+        function calculateROC(bars, periods) {
+            if (!bars || bars.length < periods+1) return null;
+            return ((bars[0].c - bars[periods].c) / bars[periods].c) * 100;
+        }
+        function getFilters() {
+            return {
+                minMarketCap: parseFloat($('minMarketCap').value)*1e6,
+                maxMarketCap: parseFloat($('maxMarketCap').value)*1e6,
+                minPrice: parseFloat($('minPrice').value),
+                minVolume: parseInt($('minVolume').value),
+                maxFloat: parseFloat($('maxFloat').value)*1e6,
+                minROC: parseFloat($('minROC').value),
+                rocTimeframe: $('rocTimeframe').value,
+            };
+        }
+        function filterBySnapshot(snapshots, f) {
+            const q = [];
+            for (const item of snapshots) {
+                const day = item.day || {}, det = item.details || {};
+                const mc = day.market_cap || 0, px = day.c || 0, vol = day.v || 0;
+                const flt = det.float_shares_outstanding || null;
+                if (mc < f.minMarketCap || mc > f.maxMarketCap) continue;
+                if (px < f.minPrice) continue;
+                if (vol < f.minVolume) continue;
+                if (flt && flt > f.maxFloat) continue;
+                const o = day.o || px;
+                q.push({ ticker: item.ticker, price: px, marketCap: mc, volume: vol, floatShares: flt, sessionROC: ((px-o)/o)*100, dayOpen: o });
+            }
+            q.sort((a,b) => Math.abs(b.sessionROC)-Math.abs(a.sessionROC));
+            return q.slice(0, 100);
+        }
+        async function deepScan(candidates, f) {
+            const r = [];
+            dom.scanStatus.textContent = `Deep scanning ${candidates.length} candidates...`;
+            for (let i=0; i<candidates.length; i++) {
+                const c = candidates[i];
+                try {
+                    const bars = await fetchBars(c.ticker);
+                    if (bars.length >= 5) {
+                        const r15 = calculateROC(bars,1), r1h = calculateROC(bars,4);
+                        let maxR = 0;
+                        if (f.rocTimeframe==='15min') maxR = r15||0;
+                        else if (f.rocTimeframe==='1hour') maxR = r1h||0;
+                        else maxR = Math.max(r15||0, r1h||0);
+                        if (Math.abs(maxR) >= f.minROC) {
+                            r.push({ ...c, roc15min: r15, roc1hour: r1h, maxROC: maxR, floatRotation: c.floatShares ? (c.volume/c.floatShares*100) : null });
+                        }
+                    }
+                } catch(e) {}
+                dom.scanStatus.textContent = `Scanning ${i+1}/${candidates.length}...`;
+                await new Promise(rr => setTimeout(rr, 300));
+            }
+            r.sort((a,b) => Math.abs(b.maxROC)-Math.abs(a.maxROC));
+            return r.slice(0, 30);
+        }
+        async function runScan() {
+            if (!STATE.apiKey) { addAlert('Enter API key first'); return; }
+            if (getCurrentSession()==='closed') { dom.scanStatus.textContent='Market closed - waiting...'; return; }
+            const f = getFilters(), start = Date.now();
+            try {
+                dom.scanStatus.textContent = 'Fetching snapshots...';
+                const snaps = await fetchSnapshots(STATE.tickersUniverse);
+                dom.tickersScanned.textContent = `Tickers: ${snaps.length}`;
+                const candidates = filterBySnapshot(snaps, f);
+                dom.scanStatus.textContent = `${candidates.length} candidates after filter`;
+                STATE.results = await deepScan(candidates, f);
+                renderResults();
+                const dur = ((Date.now()-start)/1000).toFixed(1);
+                dom.lastScan.textContent = `Last scan: ${new Date().toLocaleTimeString()} (${dur}s)`;
+                dom.scanStatus.textContent = `Complete - ${STATE.results.length} movers`;
+                if (STATE.results.length) addAlert(`🔥 ${STATE.results.length} movers! Top: ${STATE.results[0].ticker} (${formatPercent(STATE.results[0].maxROC)})`);
+            } catch(e) { dom.scanStatus.textContent = `Error: ${e.message}`; addAlert(`Scan failed: ${e.message}`); }
+        }
+        function renderResults() {
+            if (!STATE.results.length) {
+                dom.resultsBody.innerHTML = '<tr class="placeholder"><td colspan="9">No movers found matching criteria</td></tr>';
+                dom.resultCount.textContent = '0 results'; return;
+            }
+            dom.resultsBody.innerHTML = STATE.results.map(r => {
+                const c15 = r.roc15min>=0?'roc-positive':'roc-negative';
+                const c1h = r.roc1hour>=0?'roc-positive':'roc-negative';
+                const strong = Math.abs(r.maxROC)>=5 ? ' roc-strong' : '';
+                return `<tr>
+                    <td><strong>${r.ticker}</strong></td>
+                    <td>$${r.price?.toFixed(2)||'--'}</td>
+                    <td>${formatMarketCap(r.marketCap)}</td>
+                    <td class="${c15}${strong}">${formatPercent(r.roc15min)}</td>
+                    <td class="${c1h}${strong}">${formatPercent(r.roc1hour)}</td>
+                    <td>${formatVolume(r.volume)}</td>
+                    <td>${r.floatShares?formatVolume(r.floatShares):'N/A'}</td>
+                    <td>${r.floatRotation?r.floatRotation.toFixed(1)+'%':'N/A'}</td>
+                    <td>${getCurrentSession().toUpperCase()}</td>
+                </tr>`;
+            }).join('');
+            dom.resultCount.textContent = `${STATE.results.length} results`;
+        }
+        function startScanning() {
+            if (STATE.isScanning) return;
+            STATE.isScanning = true;
+            dom.startScanBtn.disabled = true;
+            dom.stopScanBtn.disabled = false;
+            dom.scanStatus.textContent = 'Starting...';
+            runScan();
+            STATE.scanTimer = setInterval(runScan, parseInt($('scanInterval').value)*1000);
+            addAlert('Scanner started');
+        }
+        function stopScanning() {
+            STATE.isScanning = false;
+            dom.startScanBtn.disabled = false;
+            dom.stopScanBtn.disabled = true;
+            if (STATE.scanTimer) { clearInterval(STATE.scanTimer); STATE.scanTimer = null; }
+            dom.scanStatus.textContent = 'Stopped';
+            addAlert('Scanner stopped');
+        }
+        function saveApiKey() {
+            const k = dom.apiKeyInput.value.trim();
+            if (!k) { addAlert('Enter valid key'); return; }
+            STATE.apiKey = k;
+            localStorage.setItem('polygon_api_key', k);
+            dom.apiKeySection.style.display = 'none';
+            dom.controls.style.display = 'flex';
+            dom.statusBar.style.display = 'flex';
+            dom.results.style.display = 'block';
+            dom.alerts.style.display = 'block';
+            dom.clearKeyBtn.style.display = 'inline-block';
+            addAlert('Key saved. Loading universe...');
+            initApp();
+        }
+        function clearApiKey() {
+            STATE.apiKey = null;
+            localStorage.removeItem('polygon_api_key');
+            dom.apiKeySection.style.display = 'flex';
+            dom.controls.style.display = 'none';
+            dom.statusBar.style.display = 'none';
+            dom.results.style.display = 'none';
+            dom.alerts.style.display = 'none';
+            dom.clearKeyBtn.style.display = 'none';
+            dom.apiKeyInput.value = '';
+            stopScanning();
+            addAlert('Key cleared');
+        }
+        async function initApp() {
+            if (!STATE.apiKey) return;
+            try {
+                if (!STATE.tickersUniverse.length) STATE.tickersUniverse = await fetchAllTickers();
+                addAlert('Ready. Press Start Scanning.');
+                dom.scanStatus.textContent = 'Ready';
+            } catch(e) { addAlert(`Init error: ${e.message}`); }
+        }
+        dom.saveKeyBtn.addEventListener('click', saveApiKey);
+        dom.clearKeyBtn.addEventListener('click', clearApiKey);
+        dom.startScanBtn.addEventListener('click', startScanning);
+        dom.stopScanBtn.addEventListener('click', stopScanning);
+        dom.apiKeyInput.addEventListener('keypress', e => { if (e.key==='Enter') saveApiKey(); });
+        const savedKey = localStorage.getItem('polygon_api_key');
+        if (savedKey) {
+            STATE.apiKey = savedKey;
+            dom.apiKeySection.style.display = 'none';
+            dom.controls.style.display = 'flex';
+            dom.statusBar.style.display = 'flex';
+            dom.results.style.display = 'block';
+            dom.alerts.style.display = 'block';
+            dom.clearKeyBtn.style.display = 'inline-block';
+            initApp();
+        }
+        setInterval(updateClock, 1000);
+        setInterval(updateSessionIndicator, 30000);
+        updateClock();
+        updateSessionIndicator();
+    </script>
 </body>
 </html>
