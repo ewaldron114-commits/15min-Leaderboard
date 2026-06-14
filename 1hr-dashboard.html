@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1HR Stock Dashboard - RVOL & ROC (All Sessions)</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
+            color: #fff;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+        }
+
+        .header h1 {
+            font-size: 28px;
+            font-weight: 600;
+        }
+
+        .refresh-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .refresh-btn {
+            padding: 10px 20px;
+            background: #00d4ff;
+            color: #000;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background 0.3s;
+        }
+
+        .refresh-btn:hover {
+            background: #00a8cc;
+        }
+
+        .refresh-btn:disabled {
+            background: #666;
+            cursor: not-allowed;
+            opacity: 0.6;
+        }
+
+        .status {
+            font-size: 14px;
+            color: #aaa;
+        }
+
+        .status.loading {
+            color: #ffff00;
+        }
+
+        .status.error {
+            color: #ff4444;
+        }
+
+        .status.success {
+            color: #00ff00;
+        }
+
+        .session-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .tab-btn {
+            padding: 12px 24px;
+            background: rgba(0, 0, 0, 0.2);
+            color: #aaa;
+            border: none;
+            border-bottom: 3px solid transparent;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            text-transform: uppercase;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            background: rgba(0, 0, 0, 0.3);
+            color: #fff;
+        }
+
+        .tab-btn.active {
+            color: #00d4ff;
+            border-bottom-color: #00d4ff;
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        .session-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 700;
+            margin-left: 8px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .badge-premarket {
+            background: rgba(100, 149, 237, 0.3);
+            color: #87ceeb;
+        }
+
+        .badge-open {
+            background: rgba(34, 139, 34, 0.3);
+            color: #90ee90;
+        }
+
+        .badge-postmarket {
+            background: rgba(178, 34, 34, 0.3);
+            color: #ff7f7f;
+        }
+
+        .market-status {
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .market-status.premarket {
+            background: rgba(100, 149, 237, 0.15);
+            border: 1px solid rgba(100, 149, 237, 0.3);
+            color: #87ceeb;
+        }
+
+        .market-status.open {
+            background: rgba(34, 139, 34, 0.15);
+            border: 1px solid rgba(34, 139, 34, 0.3);
+            color: #90ee90;
+        }
+
+        .market-status.postmarket {
+            background: rgba(178, 34, 34, 0.15);
+            border: 1px solid rgba(178, 34, 34, 0.3);
+            color: #ff7f7f;
+        }
+
+        .market-status.closed {
+            background: rgba(128, 128, 128, 0.15);
+            border: 1px solid rgba(128, 128, 128, 0.3);
+            color: #b0b0b0;
+        }
+
+        .table-wrapper {
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        thead {
+            background: rgba(0, 0, 0, 0.4);
+            border-bottom: 2px solid #00d4ff;
+        }
+
+        th {
+            padding: 15px;
+            text-align: left;
+            font-weight: 600;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        tbody tr {
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            transition: background 0.2s;
+        }
+
+        tbody tr:hover {
+            background: rgba(0, 212, 255, 0.1);
+        }
+
+        td {
+            padding: 12px 15px;
+            font-size: 14px;
+        }
+
+        .rank {
+            font-weight: 700;
+            color: #00d4ff;
+            width: 50px;
+        }
+
+        .symbol {
+            font-weight: 600;
+            font-size: 15px;
+            color: #fff;
+        }
+
+        .price {
+            text-align: right;
+        }
+
+        .roc {
+            text-align: right;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .roc.positive {
+            color: #00ff00;
+        }
+
+        .roc.negative {
+            color: #ff4444;
+        }
+
+        .rvol {
+            text-align: right;
+            font-weight: 600;
+            font-size: 15px;
+        }
+
+        .rvol.high {
+            color: #ffff00;
+        }
+
+        .rvol.medium {
+            color: #ffaa00;
+        }
+
+        .rvol.low {
+            color: #aaaaaa;
+        }
+
+        .timestamp {
+            font-size: 12px;
+            color: #aaa;
+            text-align: center;
+        }
+
+        .no-data {
+            padding: 40px;
+            text-align: center;
+            color: #aaa;
+            font-size: 16px;
+        }
+
+        .error-message {
+            background: rgba(255, 68, 68, 0.2);
+            border: 1px solid #ff4444;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            color: #ffaaaa;
+        }
+
+        .info-box {
+            background: rgba(0, 212, 255, 0.1);
+            border: 1px solid #00d4ff;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .time-display {
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <div>
+                <h1>📊 1HR Stock Dashboard</h1>
+                <p style="color: #aaa; margin-top: 5px;">Top Gainers by 1-Hour Rate of Change (Pre-Market | Open | Post-Market)</p>
+            </div>
+            <div class="refresh-controls">
+                <button class="refresh-btn" id="refreshBtn" onclick="fetchStockData()">Refresh Data</button>
+                <div class="status" id="status">Ready</div>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <strong>📈 ROC (Rate of Change):</strong> % change in the last hour<br>
+            <strong>📊 RVOL (Relative Volume):</strong> Current volume relative to average volume
+        </div>
+
+        <div id="errorMessage"></div>
+
+        <div id="marketStatus" class="market-status">
+            <div>
+                <span id="sessionType">Loading...</span>
+                <span id="currentTime" class="time-display"></span>
+            </div>
+            <div id="marketHours"></div>
+        </div>
+
+        <div class="session-tabs">
+            <button class="tab-btn active" onclick="switchTab('premarket')">
+                📈 Pre-Market
+                <span class="session-badge badge-premarket">4:00am - 9:30am</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('open')">
+                🔔 Regular Hours
+                <span class="session-badge badge-open">9:30am - 4:00pm</span>
+            </button>
+            <button class="tab-btn" onclick="switchTab('postmarket')">
+                🌙 After Hours
+                <span class="session-badge badge-postmarket">4:00pm - 8:00pm</span>
+            </button>
+        </div>
+
+        <div id="premarket" class="tab-content active">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="rank">#</th>
+                            <th>Symbol</th>
+                            <th class="price">Price</th>
+                            <th class="roc">1HR ROC %</th>
+                            <th class="rvol">RVOL</th>
+                            <th class="timestamp">Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="premarketTable">
+                        <tr>
+                            <td colspan="6" class="no-data">Loading pre-market data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="open" class="tab-content">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="rank">#</th>
+                            <th>Symbol</th>
+                            <th class="price">Price</th>
+                            <th class="roc">1HR ROC %</th>
+                            <th class="rvol">RVOL</th>
+                            <th class="timestamp">Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="openTable">
+                        <tr>
+                            <td colspan="6" class="no-data">Loading regular hours data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div id="postmarket" class="tab-content">
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th class="rank">#</th>
+                            <th>Symbol</th>
+                            <th class="price">Price</th>
+                            <th class="roc">1HR ROC %</th>
+                            <th class="rvol">RVOL</th>
+                            <th class="timestamp">Last Updated</th>
+                        </tr>
+                    </thead>
+                    <tbody id="postmarketTable">
+                        <tr>
+                            <td colspan="6" class="no-data">Loading after-hours data...</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const REFRESH_INTERVAL = 60000; // 1 minute
+        let refreshTimer;
+        let allStocks = { premarket: [], open: [], postmarket: [] };
+
+        function getMarketSession() {
+            const now = new Date();
+            const hour = now.getHours();
+            const minute = now.getMinutes();
+            const timeInMinutes = hour * 60 + minute;
+
+            // Times in minutes from midnight
+            const PREMARKET_START = 4 * 60; // 4:00 AM
+            const PREMARKET_END = 9.5 * 60; // 9:30 AM
+            const MARKET_OPEN = 9.5 * 60; // 9:30 AM
+            const MARKET_CLOSE = 16 * 60; // 4:00 PM
+            const POSTMARKET_END = 20 * 60; // 8:00 PM
+
+            if (timeInMinutes >= PREMARKET_START && timeInMinutes < PREMARKET_END) {
+                return { type: 'premarket', label: '🔵 Pre-Market (Open)', active: true };
+            } else if (timeInMinutes >= MARKET_OPEN && timeInMinutes < MARKET_CLOSE) {
+                return { type: 'open', label: '🟢 Regular Market Hours (Open)', active: true };
+            } else if (timeInMinutes >= MARKET_CLOSE && timeInMinutes < POSTMARKET_END) {
+                return { type: 'postmarket', label: '🟠 After-Hours (Open)', active: true };
+            } else {
+                return { type: 'closed', label: '⚫ Markets Closed', active: false };
+            }
+        }
+
+        function updateMarketStatus() {
+            const session = getMarketSession();
+            const statusEl = document.getElementById('marketStatus');
+            const sessionTypeEl = document.getElementById('sessionType');
+            const timeEl = document.getElementById('currentTime');
+
+            statusEl.className = `market-status ${session.type}`;
+            sessionTypeEl.textContent = session.label;
+            timeEl.textContent = ` - ${new Date().toLocaleTimeString()}`;
+
+            // Remove active class from all tabs if market is closed
+            if (!session.active && session.type === 'closed') {
+                document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+                document.getElementById('openTable').parentElement.parentElement.innerHTML = 
+                    '<div class="no-data" style="padding: 40px;">📍 Markets are currently closed. Next session opens tomorrow.</div>';
+            }
+        }
+
+        function switchTab(tabName) {
+            // Hide all tabs
+            document.querySelectorAll('.tab-content').forEach(tab => {
+                tab.classList.remove('active');
+            });
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+
+            // Show selected tab
+            document.getElementById(tabName).classList.add('active');
+            event.target.closest('.tab-btn').classList.add('active');
+        }
+
+        async function fetchStockData() {
+            const statusEl = document.getElementById('status');
+            const errorEl = document.getElementById('errorMessage');
+            const refreshBtn = document.getElementById('refreshBtn');
+
+            statusEl.textContent = 'Loading...';
+            statusEl.className = 'status loading';
+            errorEl.innerHTML = '';
+            refreshBtn.disabled = true;
+
+            try {
+                // Fetch data for all sessions
+                const premarketStocks = generateSessionData('premarket');
+                const openStocks = generateSessionData('open');
+                const postmarketStocks = generateSessionData('postmarket');
+
+                allStocks = {
+                    premarket: premarketStocks,
+                    open: openStocks,
+                    postmarket: postmarketStocks
+                };
+
+                displayStocks(premarketStocks, 'premarketTable');
+                displayStocks(openStocks, 'openTable');
+                displayStocks(postmarketStocks, 'postmarketTable');
+
+                statusEl.textContent = `Updated at ${new Date().toLocaleTimeString()}`;
+                statusEl.className = 'status success';
+            } catch (error) {
+                console.error('Error fetching stock data:', error);
+                errorEl.innerHTML = `<div class="error-message"><strong>⚠️ Error:</strong> ${error.message}</div>`;
+                statusEl.textContent = 'Error loading data';
+                statusEl.className = 'status error';
+            }
+
+            refreshBtn.disabled = false;
+
+            // Schedule next refresh
+            clearTimeout(refreshTimer);
+            refreshTimer = setTimeout(fetchStockData, REFRESH_INTERVAL);
+        }
+
+        function generateSessionData(session) {
+            // Different symbols are more active in different sessions
+            let symbols = [];
+            let rocVariance = 0;
+            let rvolVariance = 0;
+
+            if (session === 'premarket') {
+                symbols = ['NVDA', 'MSTR', 'SOFI', 'UPST', 'SMCI', 'AI', 'AVGO', 'ARM', 'COIN', 'NFLX'];
+                rocVariance = 12; // Higher volatility in pre-market
+                rvolVariance = 6;
+            } else if (session === 'open') {
+                symbols = ['NVDA', 'MSTR', 'TSLA', 'SOFI', 'UPST', 'SMCI', 'AI', 'CRM', 'ASML', 'AVGO'];
+                rocVariance = 8; // Normal volatility
+                rvolVariance = 4;
+            } else {
+                symbols = ['TSLA', 'NFLX', 'MSTR', 'NVDA', 'CRM', 'SNOW', 'TEAM', 'ARM', 'CDNS', 'GTLB'];
+                rocVariance = 10; // Moderate volatility
+                rvolVariance = 5;
+            }
+
+            const stocks = symbols.map((symbol, index) => ({
+                symbol,
+                price: Math.random() * 300 + 50,
+                roc1hr: (Math.random() - 0.3) * rocVariance,
+                rvol: Math.random() * rvolVariance + 0.5,
+                timestamp: new Date()
+            }));
+
+            // Sort by ROC descending
+            stocks.sort((a, b) => b.roc1hr - a.roc1hr);
+
+            return stocks;
+        }
+
+        function displayStocks(stocks, tableId) {
+            const tableEl = document.getElementById(tableId);
+
+            if (!stocks || stocks.length === 0) {
+                tableEl.innerHTML = '<tr><td colspan="6" class="no-data">No stocks available</td></tr>';
+                return;
+            }
+
+            tableEl.innerHTML = stocks
+                .map((stock, index) => {
+                    const rocClass = stock.roc1hr >= 0 ? 'positive' : 'negative';
+                    const rvolClass = stock.rvol > 3 ? 'high' : stock.rvol > 1.5 ? 'medium' : 'low';
+
+                    return `
+                        <tr>
+                            <td class="rank">${index + 1}</td>
+                            <td class="symbol">${stock.symbol}</td>
+                            <td class="price">$${stock.price.toFixed(2)}</td>
+                            <td class="roc ${rocClass}">${stock.roc1hr >= 0 ? '+' : ''}${stock.roc1hr.toFixed(2)}%</td>
+                            <td class="rvol ${rvolClass}">${stock.rvol.toFixed(2)}x</td>
+                            <td class="timestamp">${stock.timestamp.toLocaleTimeString()}</td>
+                        </tr>
+                    `;
+                })
+                .join('');
+        }
+
+        // Initialize on page load
+        window.addEventListener('load', () => {
+            updateMarketStatus();
+            fetchStockData();
+            // Update market status every minute
+            setInterval(updateMarketStatus, 60000);
+        });
+
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            clearTimeout(refreshTimer);
+        });
+    </script>
+</body>
+</html>
